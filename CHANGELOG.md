@@ -115,10 +115,48 @@ costly to revisit later or a measurement that stops a later phase guessing.
   fixture, because SQLite leaves them off by default and D1 does not — a suite
   that forgets would accept an event pointing at a part that does not exist.
 
-#### Still open, and recorded as such
-Four probes need a live database over REST and cannot be answered with
-`--local`: whether bound `params` are typed or stringly on the wire (P1),
-whether a semicolon-joined multi-statement `/query` is atomic (P3, which decides
-whether migrations need a per-statement ledger), the real wire bodies for 401 /
-quota-exceeded / timeout so they can become fixtures (P8), and whether
-`meta.rows_read` matches the scanned-row estimate above (P9).
+- **The databases exist, and the migration is applied.** `kicad-partlib` and
+  `kicad-partlib-staging` (region APAC), taking the account to 8 of its 10 free
+  slots. The rehearse-then-promote workflow from `docs/d1-setup.md` was used for
+  its own first migration rather than merely described: staging first, 21
+  commands, then production. Production holds the schema and **zero rows**.
+
+### Phase 0 — probes answered against the live database
+
+The remaining probes were run on `kicad-partlib-staging`, which is what it is
+for. Three of them changed something.
+
+- **A multi-statement batch IS atomic (P3)** — a valid `INSERT` followed by a
+  primary-key violation left **zero** rows. So a migration file cannot land
+  half-applied, and the per-statement migrations ledger keyed
+  `(version, stmt_index)` that was being held in reserve is **not needed**. This
+  contradicts the assumption the design was carrying. The caveat that keeps the
+  audit trigger: it was measured **without bound params**, and the reported
+  failure mode is specifically multi-statement *plus* a shared `params` array —
+  which is the case every real write falls into. Rule 5 now states both cases
+  and assumes the pessimistic one where it is unsettled.
+
+- **`rows_written` counts index writes, roughly 4× (P4).** One
+  `UPDATE parts` reported `rows_written = 4`; inserting two rows reported 8. So
+  "a 2,000-row import is 2% of the daily cap" was wrong by that factor — it is
+  nearer 8%. Still comfortable, but the multiplier is now written down where a
+  bulk operation will be planned, and the `parts_audit_update` trigger's own row
+  is part of it.
+
+- **`rows_read` really is rows scanned (P9).** 20 parts + 200 events = 220 rows;
+  the full stock aggregate reported `rows_read = 239`. Metering is proportional
+  to table size, which makes Rule 4's budget — and therefore the case for
+  `stock_checkpoints` — measured rather than estimated.
+
+- Confirmed on the real database rather than only the local engine: `json_each`
+  preserves types (`typeof` → `integer`), the `AFTER UPDATE` trigger fires, and
+  `seq` really does skip a number on an ignored insert (202 rows, `max_seq`
+  203).
+
+#### Still open
+Two probes need the raw REST endpoint carrying a bound-parameter payload, which
+`wrangler` cannot send: whether `params` are typed or stringly on the wire (P1),
+and whether multi-statement plus `params` is atomic (P3b). Both need the
+dedicated D1-scoped API token, which has to be created in the Cloudflare
+dashboard — wrangler cannot mint one. Also P8, capturing the real 401 /
+quota-exceeded / timeout bodies as test fixtures.

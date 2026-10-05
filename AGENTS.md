@@ -92,8 +92,8 @@ it is gitignored. `CACHE_DIR` does **not** override this — measured.
 |---|---|---|
 | Databases / account | **10** | The owner already has 6. Only 4 slots are free — the "spare database for rehearsing migrations" idea is affordable but not unlimited. |
 | Max database size | 500 MB | 2,000 parts ≈ 2 MB. Non-issue. |
-| **Rows read / day** | **5,000,000** | Metered by rows **scanned**, not returned. See §3.3. |
-| **Rows written / day** | **100,000** | A 2,000-row import is 2% of a day. |
+| **Rows read / day** | **5,000,000** | Metered by rows **scanned**, not returned. Measured ≈ rows scanned. See Rule 4. |
+| **Rows written / day** | **100,000** | **Multiply by ~4**: index updates count. Measured — one `UPDATE parts` reported `rows_written = 4`, and inserting 2 rows reported 8. So a 2,000-row import is ~8,000 writes (8% of a day), not 2,000. |
 | Max row / BLOB | 2 MB | Never store datasheets or models. Store URLs. |
 | Max SQL statement | 100 KB | See the `json_each` batching shape, §3.4. |
 | **Max bound params / query** | **100** | The reason for `json_each`, §3.4. |
@@ -108,29 +108,39 @@ Authorization: Bearer <token>
 ```
 
 ### 2.3 SQL feature probes
-Run with `wrangler d1 execute <db> --local`, which runs D1's own engine with no
-account. Encoded as tests in `tests/test_schema.py`.
+Measured against D1's own engine — `--local` first, then **confirmed on the real
+remote database** (`kicad-partlib-staging`, which exists for exactly this).
+Encoded as tests in `tests/test_schema.py`.
 
-| # | Probe | Answer |
-|---|---|---|
-| P2 | `INSERT … SELECT json_extract(value,'$.k') FROM json_each(?)` | **Works**, one bound param, and `typeof()` confirms **types survive** (an integer stays `integer`) |
-| P4 | `AFTER UPDATE` trigger | **Fires.** One `UPDATE` → exactly one audit row |
-| P5 | `sqlite_master` readable; `pragma_table_info('t')` as a table-valued function | **Both work** |
-| P6 | `INTEGER PRIMARY KEY AUTOINCREMENT`, `INSERT OR IGNORE` on a UNIQUE conflict | Works. **`seq` is monotonic but NOT gapless** — an ignored insert still consumes a number |
-| — | Partial index (`CREATE INDEX … WHERE`), CTEs (`WITH`) | **Both work** |
+| # | Probe | Answer | Where |
+|---|---|---|---|
+| P2 | `json_each(…)` + `json_extract` | **Works**, and `typeof()` confirms **types survive** — an integer stays `integer`, so micro-USD amounts are not stringified | local **and remote** |
+| P3 | Is a multi-statement batch atomic? | **YES — atomic.** A valid `INSERT` followed by a PK violation left **zero** rows: the whole batch rolled back. So a migration file applied by wrangler cannot land half-applied, and the per-statement migration ledger that was held in reserve is **not needed**. ⚠️ Measured **without bound params** — see Rule 5 | **remote** |
+| P4 | `AFTER UPDATE` trigger | **Fires.** One `UPDATE` → exactly one audit row. And its write **is** metered: `rows_written = 4` for a single-part update | local **and remote** |
+| P5 | `sqlite_master` readable; `pragma_table_info('t')` as a table-valued function | **Both work** | local |
+| P6 | `AUTOINCREMENT`; `INSERT OR IGNORE` on a UNIQUE conflict | Works. **`seq` is monotonic but NOT gapless** — remote showed 202 rows with `max_seq = 203` | local **and remote** |
+| P9 | Is `meta.rows_read` ≈ rows scanned? | **Yes, confirmed.** 20 parts + 200 events = 220 rows; the full stock aggregate reported `rows_read = 239`. Metering is proportional to table size, so Rule 4's arithmetic is real | **remote** |
+| — | Partial index (`CREATE INDEX … WHERE`), CTEs (`WITH`) | **Both work** | local |
 
 **`seq` has gaps.** Never infer a count, a density or completeness from it; in
 particular a future "pull everything since sequence N" sync must treat gaps as
 normal. This is exactly the assumption that looks fine for a year.
 
-**Still open — these need a real database over REST, not `--local`:**
+**`rows_written` counts index writes.** One logical row costs ~4. Budget bulk
+operations accordingly — and note that the `parts_audit_update` trigger adds its
+own row to every part edit.
+
+**Still open — these need the raw REST endpoint with a bound-parameter payload,
+which `wrangler` cannot send:**
 
 | # | Probe | Why it matters |
 |---|---|---|
-| P1 | Are bound `params` typed or stringly on the wire? | The REST docs describe `params` as an array of *strings*. If so, micro-USD integers could arrive as TEXT and break `SUM`. The `json_each` shape (P2) sidesteps it. |
-| P3 | Is a semicolon-joined multi-statement `/query` atomic? | Decides whether migrations need a per-statement ledger keyed `(version, stmt_index)`. |
+| P1 | Are bound `params` typed or stringly on the wire? | The REST docs describe `params` as an array of *strings*. If so, micro-USD integers could arrive as TEXT and break `SUM`. The `json_each` shape (P2) sidesteps it, which is the main reason to prefer that shape. |
+| P3b | Is a multi-statement batch atomic **with a shared `params` array**? | P3 answered the param-free case. The reported failure mode is specifically multi-statement *plus* `params`. Rule 5 assumes the pessimistic answer. |
 | P8 | Capture real wire bodies for 401, quota-exceeded, 30 s timeout | They become test fixtures for the error contracts in §4. |
-| P9 | Is `meta.rows_read` for a `SUM … GROUP BY` over N rows ≈ N? | Makes §3.3's budget measured rather than assumed. |
+
+Both need the dedicated API token from `docs/d1-setup.md` §4, which must be
+created in the dashboard — wrangler cannot mint one.
 
 ### 2.4 Qt and the test suite
 | Question | Measured answer |
@@ -212,16 +222,26 @@ reports it. An earlier draft of the plan budgeted 250 k/day by counting `parts`
 and forgetting the ledger entirely — instrumentation is what catches that class
 of error, and a spreadsheet is what caused it.
 
-### Rule 5: One parameterised statement is the only atomic unit
-`BEGIN TRANSACTION` is rejected (D1 wraps each statement itself), atomic
-multi-statement `batch()` is a Workers-runtime capability with **no HTTP
-equivalent**, and a semicolon-joined statement list with a shared `params` array
-is reported not to work. *(P3 — confirm over REST.)*
+### Rule 5: Treat one parameterised statement as the only atomic unit
+Two different cases, and only one of them is settled:
 
-So "UPDATE the part, then INSERT an audit row" **cannot be one unit of work**.
-The audit row is written by an `AFTER UPDATE` **trigger**, inside the implicit
-transaction that already wraps the `UPDATE`. Verified: it fires, and
-`SqliteStore` inherits it for free because the dialect is identical.
+* **Without bound params**, a multi-statement batch **is atomic** — measured
+  (P3): a valid `INSERT` followed by a PK violation rolled the whole batch back.
+  This is why `wrangler d1 migrations apply` is safe and migrations need no
+  per-statement ledger.
+* **With a shared `params` array**, multi-statement is reported not to work and
+  is **unverified** (P3b). `BEGIN TRANSACTION` is rejected outright (D1 wraps
+  statements itself) and atomic `batch()` is a Workers-runtime capability with
+  **no HTTP equivalent**.
+
+Every write this tool makes carries user data, so it uses bound params, so it
+lands in the unsettled case. **Assume the pessimistic answer.**
+
+So "UPDATE the part, then INSERT an audit row" **cannot be relied on as one unit
+of work**. The audit row is written by an `AFTER UPDATE` **trigger**, inside the
+implicit transaction that already wraps the single `UPDATE`. Verified on the real
+database: it fires, it is metered, and `SqliteStore` inherits it for free because
+the dialect is identical.
 
 Cost, stated plainly: the trigger enumerates columns, so **adding a column to
 `parts` means a migration that drops and recreates `parts_audit_update`**, and
