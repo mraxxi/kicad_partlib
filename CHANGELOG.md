@@ -5,6 +5,20 @@ D1 and is not tracked here; this file is about the code and the schema.
 
 ## [Unreleased]
 
+### Phase 2 — inventory UI
+
+- **Migration `0004`**: `parts.min_qty` (reorder threshold, per part), `lots.create_key` (retry-safe lot
+  creation), partial index for reorder queries.
+- **API**: keyset-paged parts with stock aggregated in one pass over lots; part detail with lots and
+  history; `PATCH` with `rev` and a field-level conflict diff; `applyMove` (the only code that changes a
+  lot's quantity; recomputes from the ledger); stocktake-as-delta; partial-lot reclassify via split;
+  manual stock; locations and donors CRUD; harvest (find-or-create parts, salvaged lots with *estimated*
+  value kept apart from money spent); dashboard; sentence-style validation errors.
+- **UI**: Dashboard, Parts (TanStack Table, search/filter/sort), Part detail, Salvage with a
+  keyboard-first harvest form, Locations, Import; usable at phone width.
+- Not using Drizzle (see AGENTS.md §3). Local dev needs `.dev.vars` blanking the Access settings.
+- 61 tests.
+
 ### Pivot to a Worker stack, and Phase 1 (LCSC import)
 
 - **Replaced the Python/PySide6/REST-client design** with one Cloudflare Worker

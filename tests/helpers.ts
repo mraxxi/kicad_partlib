@@ -7,10 +7,10 @@ export const FILES = {
   b: { filename: 'LCSC__WM2408250114_20261006045133.csv', csv: csv2 },
 };
 
-export async function api(path: string, body?: unknown): Promise<{ status: number; json: any }> {
+export async function api(path: string, body?: unknown, method = body === undefined ? 'GET' : 'POST'): Promise<{ status: number; json: any }> {
   const res = await exports.default.fetch(
-    new Request(`https://partlib.test${path}`, body === undefined ? undefined : {
-      method: 'POST',
+    new Request(`https://partlib.test${path}`, body === undefined ? { method } : {
+      method,
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(body),
     }),
@@ -33,7 +33,7 @@ export async function count(table: string): Promise<number> {
 export async function reset(): Promise<void> {
   const triggers = await env.DB.prepare("SELECT sql FROM sqlite_master WHERE type='trigger'").all<{ sql: string }>();
   await env.DB.exec("DROP TRIGGER IF EXISTS stock_moves_no_update;DROP TRIGGER IF EXISTS stock_moves_no_delete;");
-  for (const t of ['stock_moves', 'lots', 'order_lines', 'orders', 'part_aliases', 'parts', 'import_runs', 'usage_daily']) {
+  for (const t of ['stock_moves', 'lots', 'order_lines', 'orders', 'part_aliases', 'parts', 'donors', 'locations', 'import_runs', 'usage_daily']) {
     await env.DB.exec(`DELETE FROM ${t};`);
   }
   for (const t of triggers.results) await env.DB.exec(t.sql.replace(/\s*\n\s*/g, ' '));

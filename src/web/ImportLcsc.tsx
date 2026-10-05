@@ -60,10 +60,10 @@ export function ImportLcsc() {
   const canApply = !!plan && plan.errors.length === 0 && plan.summary.lotsToCreate > 0 && previewed === key && !applied && !busy;
 
   return (
-    <main>
+    <>
       <h1>Import an LCSC order</h1>
       <p className="lede">Choose the CSV exported from LCSC, check the details, preview, then apply. Nothing is written until you apply.</p>
-      <form onSubmit={(e) => { e.preventDefault(); void send(false); }}>
+      <form className="import" onSubmit={(e) => { e.preventDefault(); void send(false); }}>
         <label>LCSC CSV file
           <input type="file" accept=".csv,text/csv" onChange={async (e) => {
             const f = e.target.files?.[0];
@@ -122,6 +122,6 @@ export function ImportLcsc() {
           </div>
         </>
       )}
-    </main>
+    </>
   );
 }

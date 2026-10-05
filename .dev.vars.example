@@ -1,2 +1,6 @@
 # Copy to .dev.vars (gitignored). Local development only.
+# Blank the Access settings that wrangler.jsonc carries for the deployed Worker,
+# or local requests are refused for lacking an Access token.
 ALLOW_UNAUTHENTICATED=true
+ACCESS_TEAM_DOMAIN=""
+ACCESS_AUD=""

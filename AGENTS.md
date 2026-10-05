@@ -86,10 +86,16 @@ D1. Locale `id-ID` display, `Asia/Jakarta`, store UTC ISO-8601.
 
 Pinned notes: `vitest` must stay `^4.1` (pool-workers 0.22 rejects 5.x);
 `compatibility_date` is `2026-08-22` because the installed `workerd` rejects a
-later one — raise it only when `npm ls workerd` supports it. Drizzle ORM is in
-the plan but **not installed yet**: Phase 1 uses prepared statements and
-`json_each` for set-based writes; add Drizzle with Phase 2's list queries, plus a
-test that its schema matches the migrations.
+later one — raise it only when `npm ls workerd` supports it. Drizzle ORM was in
+the plan and is **deliberately not used**: every query so far is an aggregate or a
+`json_each` set-based write, which an ORM only obscures, and a hand-kept Drizzle schema
+would be a second copy of the migrations to drift. Revisit only if plain CRUD grows.
+
+**Measured, Phase 2:** a parts page reads 4 rows per part (the part, its lot, its
+category, and the keyset scan) — the plan's "< 2 x page size" is unreachable with a
+lot per part, and 4 x is negligible. The ledger (`stock_moves`) is never read to
+list parts. The browser loads all pages (500 each) once and filters/sorts locally;
+at 2,000 parts that is roughly 8,000 rows read per full refresh (0.16% of a day).
 
 ## 4. Conventions that carry over from the sibling repo
 
@@ -99,6 +105,10 @@ test that its schema matches the migrations.
   never trusts one sent by the client. Planning must write nothing — tested.
 * **A refused action says why, in one full sentence**, identical wherever it is
   shown. Errors never echo `err.message` to the client (it can carry SQL).
+* **Lots are homogeneous.** Changing part of a lot (3 of 10 turned out faulty; 5 went to another
+  drawer) splits it: a new lot plus a matched pair of `transfer` moves. Changing a whole lot's
+  location/condition is not a quantity change and writes no move. `lots.create_key` makes lot creation
+  retry-safe; a stocktake is stored as a delta (`adjust`) with both numbers in the note.
 * **Optimistic concurrency** on user-editable rows: `rev`. On a conflict, refuse
   and show a field-level diff; never silently re-send with the new `rev`.
 * **Retry-safety first**: client-generated `move_id` (UNIQUE, `INSERT OR IGNORE`)
@@ -204,7 +214,7 @@ naming is the vocabulary they think in. Keep it; do not "tidy" it.
 |---|---|
 | 0 Pivot, schema, Worker skeleton, Access | done |
 | 1 LCSC import | **done**: API, domain, tests (99 parts/100 lots/100 moves; sheet value cross-check) and the browser form at `/` (preview, correct date/FX, apply). Migrations 0002 and 0003 are applied to **both** D1 databases (both were empty). Nothing is deployed yet and Access is not configured |
-| 2 Inventory UI, locations, donors, dashboard | next |
+| 2 Inventory UI, locations, donors, dashboard | **done**: parts table (search/filter/sort), part detail with lots + history, stock actions (use, adjust, count, scrap, move/mark with lot split), add stock, locations and donors CRUD, keyboard-first harvest, dashboard with usage meters, part edit with `rev` conflict diff. Migration `0004` is applied **locally only** — apply to staging then production before deploying |
 | 3 Purchasing (projects, needs, quotes, landed cost, recap, LCSC cart export) | schema not written yet |
 | 4 KiCad link (BOM import, library index) | see `docs/deferred/bom-reconciliation.md` |
 | 5 Labels/QR, FX cron, weekly backup Action, Sheet migration | - |

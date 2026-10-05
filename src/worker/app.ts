@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { zValidator } from '@hono/zod-validator';
+import { validate as zValidator } from './validate';
 import { z } from 'zod';
 import type { JWTVerifyGetKey } from 'jose';
 import { Meter } from '../db/meter';
@@ -8,6 +8,7 @@ import { orderDateFromOrderNo, parseLcscCsv, parseLcscFilename, type Plan } from
 import { MoneyError, parseMicro } from '../domain/money';
 import { CsvError } from '../domain/csv';
 import { accessMiddleware } from './access';
+import { inventoryRoutes } from './inventory';
 import type { AppEnv, Vars } from './env';
 
 const FREE_LIMITS = { rowsRead: 5_000_000, rowsWritten: 100_000, requests: 100_000 } as const;
@@ -69,6 +70,8 @@ export function makeApp(deps: { jwks?: JWTVerifyGetKey } = {}) {
     console.error('unhandled', err);
     return c.json({ error: 'Something went wrong on the server; nothing was reported to the browser.' }, 500);
   });
+
+  app.route('/api', inventoryRoutes());
 
   app.get('/api/health', (c) => c.json({ ok: true, identity: c.get('identity') }));
 
