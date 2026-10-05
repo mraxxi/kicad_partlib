@@ -1,0 +1,22 @@
+# Development-only.
+#
+# The tool itself uses the standard library alone for `core/`, `providers/` and
+# the CLI -- urllib talks to the Cloudflare D1 REST API, so there is no HTTP
+# dependency to install. The only runtime dependency is PySide6, and only for
+# the GUI.
+pytest>=8.0
+pytest-qt>=4.4
+
+# PySide6 is NOT listed here on purpose.
+#
+# On this machine it comes from pacman (`local/pyside6 6.11.2`), and
+# pip-installing a second copy into .venv would shadow the system Qt libraries
+# and produce the mismatched-ABI crashes that are miserable to diagnose. Create
+# the venv with access to it:
+#
+#   python -m venv --system-site-packages .venv
+#
+# On a machine without a distro package:  pip install PySide6>=6.5
+#
+# The CLI must keep working with PySide6 absent entirely -- there is a test
+# that enforces it by making the import fail.

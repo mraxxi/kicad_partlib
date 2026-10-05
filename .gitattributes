@@ -1,0 +1,16 @@
+# Normalise everything to LF in the repo and on checkout. Both machines must
+# see identical bytes; the sibling repo (KICAD_CUSTOM_LIB) learned this the
+# hard way, where mixed endings produced phantom whole-file diffs on every
+# pull.
+* text=auto eol=lf
+
+# --- SQL: always LF ------------------------------------------------------
+# Migrations are compared byte-for-byte against what was applied (their sha is
+# recorded), so a line-ending change must never look like a content change.
+*.sql       text eol=lf
+*.py        text eol=lf
+*.md        text eol=lf
+*.ini       text eol=lf
+*.toml      text eol=lf
+*.json      text eol=lf
+*.yml       text eol=lf

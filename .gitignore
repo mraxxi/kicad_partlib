@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Secrets. The Cloudflare token lives in $XDG_CONFIG_HOME/kicad_partlib/,
+# outside this repository, and must never be committed. This line is a
+# second line of defence in case someone drops one in here by hand.
+secrets.json
+.env
+.dev.vars
+
+# Database exports. These contain the whole inventory and are the backup of
+# record (docs/d1-setup.md). They are deliberately NOT tracked: git is for
+# code here, and a 5 MB SQL dump per backup would dominate the history.
+backups/
+*.sql.gz
+
+# wrangler's cache. It normally lives in the nearest node_modules/.cache, and
+# on this machine a root-owned /home/archvan/node_modules sits up-tree, so
+# wrangler cannot write there and fails with a permission error. An empty
+# project-local node_modules/ stops it walking up. See docs/d1-setup.md.
+node_modules/
+.wrangler/
+
+# Per-machine Claude Code permissions. `.claude/settings.json` is shared if one
+# is ever added; the `.local` variant is this machine's and must not be.
+.claude/settings.local.json
+
+# Desktop environments
+.directory
+.DS_Store
+Thumbs.db
