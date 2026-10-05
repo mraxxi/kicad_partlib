@@ -153,10 +153,49 @@ for. Three of them changed something.
   `seq` really does skip a number on an ignored insert (202 rows, `max_seq`
   203).
 
-#### Still open
-Two probes need the raw REST endpoint carrying a bound-parameter payload, which
-`wrangler` cannot send: whether `params` are typed or stringly on the wire (P1),
-and whether multi-statement plus `params` is atomic (P3b). Both need the
-dedicated D1-scoped API token, which has to be created in the Cloudflare
-dashboard — wrangler cannot mint one. Also P8, capturing the real 401 /
-quota-exceeded / timeout bodies as test fixtures.
+### Phase 0 — the REST probes, and a correction
+
+With the API token in place, the last three probes ran against the raw endpoint.
+One of them corrected this project's own documentation.
+
+- **Bound parameters are properly typed (P1).** `2100` comes back as
+  `typeof=integer`, `'2100'` as `text`, `1.5` as `real`, and `SUM` over bound
+  integers returns `3000` as an `integer`. The REST documentation describes
+  `params` as "an array of strings", which is misleading. **Micro-USD amounts are
+  safe as plain bound parameters**, so the `json_each(?)` shape is now a
+  *performance* choice for bulk inserts rather than a correctness requirement —
+  which removes a worry from the import design.
+
+- **Multi-statement with a shared `params` array is rejected outright (P3b)** —
+  HTTP 400, code 7400, *"params with multiple statements is not supported"*.
+  Since every write this tool makes carries user data and therefore uses bound
+  parameters, **one parameterised statement per request is the only atomic unit
+  available**. That is now settled rather than cautiously assumed, and it is the
+  measured justification for writing the audit row from a trigger.
+
+- **Fixed: a SQL error returns HTTP 400, not 200.** `AGENTS.md` asserted that
+  *"HTTP 200 is not success — the API returns 200 with `success: false` for a SQL
+  error"*. **It does not.** That claim arrived via a design review and was
+  written down without being verified. Measured taxonomy: bad token → **401**
+  / code 10000; malformed request → **400** / 7400; SQL error and constraint
+  violation → **400** / 7500; unknown database → **404** / 7404.
+
+  So distinct conditions **share HTTP 400**, which means classification must key
+  on `errors[].code` and never on the status — the same conclusion the wrong
+  claim was reaching for, but for the real reason. The defensible half survives:
+  the body carries an outer `success` *and* a per-statement `success`, and
+  `errors[0].message` is the only text worth showing a user.
+
+- **The wire bodies are committed** as `tests/fixtures/d1_responses.json`, with
+  12 tests pinning them (`tests/test_d1_fixtures.py`) so the phase-1 Store has a
+  fixed target and a Cloudflare response-shape change fails loudly. Among them a
+  guard that no fixture contains a credential, because a fixture is exactly the
+  kind of file that ends up pasted into an issue. Also noted from `meta`:
+  **`total_attempts` shows D1 retries internally**, which is worth knowing before
+  layering another retry on top.
+
+- Only the **daily-limit** body remains uncaptured; it cannot be obtained without
+  deliberately burning the account's 100,000 daily write budget. Handled
+  generically, and the fixture file says to capture it if it is ever seen.
+
+33 tests, still entirely offline.

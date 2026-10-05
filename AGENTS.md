@@ -130,17 +130,18 @@ normal. This is exactly the assumption that looks fine for a year.
 operations accordingly — and note that the `parts_audit_update` trigger adds its
 own row to every part edit.
 
-**Still open — these need the raw REST endpoint with a bound-parameter payload,
-which `wrangler` cannot send:**
+**Answered over the raw REST endpoint** (which `wrangler` cannot exercise,
+because it cannot send a bound-parameter payload):
 
-| # | Probe | Why it matters |
+| # | Probe | Answer |
 |---|---|---|
-| P1 | Are bound `params` typed or stringly on the wire? | The REST docs describe `params` as an array of *strings*. If so, micro-USD integers could arrive as TEXT and break `SUM`. The `json_each` shape (P2) sidesteps it, which is the main reason to prefer that shape. |
-| P3b | Is a multi-statement batch atomic **with a shared `params` array**? | P3 answered the param-free case. The reported failure mode is specifically multi-statement *plus* `params`. Rule 5 assumes the pessimistic answer. |
-| P8 | Capture real wire bodies for 401, quota-exceeded, 30 s timeout | They become test fixtures for the error contracts in §4. |
+| P1 | Are bound `params` typed, or stringified on the wire? | **Properly typed.** Bound `2100` → `typeof=integer`, `'2100'` → `text`, `1.5` → `real`, and `SUM` over bound integers returns `3000` as `integer`. The REST docs' "array of strings" is misleading. **Micro-USD is safe with plain bound params**, so `json_each` (P2) is a *performance* choice, not a correctness requirement. |
+| P3b | Multi-statement **with a shared `params` array**? | **Rejected outright** — HTTP 400, code 7400, *"params with multiple statements is not supported"*. This is the measured justification for Rule 5 and for writing the audit row from a trigger. |
+| P8 | Real error wire bodies | **Captured** as `tests/fixtures/d1_responses.json`. See §4 for the taxonomy — and for the correction it forced. |
 
-Both need the dedicated API token from `docs/d1-setup.md` §4, which must be
-created in the dashboard — wrangler cannot mint one.
+Only one thing remains unmeasured: the **daily-limit** response body, which
+cannot be captured without deliberately burning the account's 100,000 daily
+write budget. Handle it generically and capture it if it is ever seen.
 
 ### 2.4 Qt and the test suite
 | Question | Measured answer |
@@ -229,19 +230,21 @@ Two different cases, and only one of them is settled:
   (P3): a valid `INSERT` followed by a PK violation rolled the whole batch back.
   This is why `wrangler d1 migrations apply` is safe and migrations need no
   per-statement ledger.
-* **With a shared `params` array**, multi-statement is reported not to work and
-  is **unverified** (P3b). `BEGIN TRANSACTION` is rejected outright (D1 wraps
-  statements itself) and atomic `batch()` is a Workers-runtime capability with
-  **no HTTP equivalent**.
+* **With a shared `params` array**, multi-statement is **rejected outright** —
+  measured (P3b): HTTP 400, code 7400, *"params with multiple statements is not
+  supported"*. `BEGIN TRANSACTION` is rejected too (D1 wraps statements itself),
+  and atomic `batch()` is a Workers-runtime capability with **no HTTP
+  equivalent**.
 
 Every write this tool makes carries user data, so it uses bound params, so it
-lands in the unsettled case. **Assume the pessimistic answer.**
+lands in the rejected case. **One parameterised statement per request is the
+only atomic unit available.** This is settled, not cautious.
 
-So "UPDATE the part, then INSERT an audit row" **cannot be relied on as one unit
-of work**. The audit row is written by an `AFTER UPDATE` **trigger**, inside the
-implicit transaction that already wraps the single `UPDATE`. Verified on the real
-database: it fires, it is metered, and `SqliteStore` inherits it for free because
-the dialect is identical.
+So "UPDATE the part, then INSERT an audit row" is **not expressible as one unit
+of work at all**. The audit row is written by an `AFTER UPDATE` **trigger**,
+inside the implicit transaction that already wraps the single `UPDATE`. Verified
+on the real database: it fires, it is metered, and `SqliteStore` inherits it for
+free because the dialect is identical.
 
 Cost, stated plainly: the trigger enumerates columns, so **adding a column to
 `parts` means a migration that drops and recreates `parts_audit_update`**, and
@@ -322,21 +325,38 @@ Every call returns a `GitResult` carrying the exit code and both streams, so a
 caller can show the user what git actually said instead of a traceback."* The
 Store returns a result object and never leaks `urllib.error.HTTPError`.
 
-| Condition | Behaviour | Message must say |
-|---|---|---|
-| Timeout on a mutating call | **Do not retry blindly.** Re-read by `event_id` / `rev_token` and report what you found | "The write may or may not have landed. Checking… it did / it did not." |
-| 401 / 403 | **Never retry.** Nothing was written | the config path and the exact permission required |
-| Daily cap exceeded | Stop, report progress, name the resume command | "Wrote 1,240 of 2,000 rows before the daily write limit. Re-run `inv import --resume <run_id>` after 00:00 UTC; nothing is lost." |
-| DNS / no route | Offline | "This tool keeps nothing locally, so no part data is available until the connection is back." |
-| 5xx | Backoff, cap at 3 attempts, then report | the attempt count |
-| Schema mismatch | **Refuse everything** | "The database schema is newer than this checkout. `git pull` on this machine first." |
+**Measured wire behaviour** (probe P8; bodies committed as
+`tests/fixtures/d1_responses.json`). Classify on the **`errors[].code`**, not on
+the HTTP status, because several distinct conditions share `400`:
 
-**HTTP 200 is not success.** The Cloudflare API returns **200 with
-`success: false`** for a SQL error, with the real message in `errors[]`. Check
-the outer `success`, **then each statement's own `success`**, and surface
-`errors[0].message`. Never `raise_for_status()` and assume. Pin the unwrapping
-against a recorded response fixture so a shape change fails loudly rather than
-at the next stocktake.
+| Condition | HTTP | `code` | Class | Behaviour |
+|---|---|---|---|---|
+| Bad / revoked / expired token | **401** | 10000 | `D1AuthError` | **Never retry.** Nothing was written. Name the config path and the required permission |
+| Malformed request (e.g. multi-statement + `params`) | **400** | 7400 | `D1RequestError` | Never retry — a programming error |
+| SQL error (`no such table`, …) | **400** | 7500 | `D1SqlError` | Never retry; it will fail identically |
+| Constraint violation | **400** | 7500 | `D1ConstraintError` | Expected for a plain `INSERT` retry; `stock_events` uses `INSERT OR IGNORE` so a retried event never reaches this |
+| Unknown database id | **404** | 7404 | `D1ConfigError` | The secrets file points at the wrong database |
+| Daily cap exceeded | 4xx | — | `D1LimitError` | Stop, report progress, name the resume command. **Not captured** — see the fixture's `_not_captured` note |
+| 5xx | 5xx | — | retryable | Backoff, cap at 3 attempts, then report the attempt count |
+| Socket timeout | — | — | `D1TimeoutError` | **Do not retry blindly.** Re-read by `event_id` / `rev_token`: "the write may or may not have landed. Checking… it did / it did not." The one genuinely-unknown outcome |
+| DNS / no route | — | — | `D1OfflineError` | "This tool keeps nothing locally, so no part data is available until the connection is back." |
+| Schema mismatch | — | — | — | **Refuse everything.** "The database schema is newer than this checkout. `git pull` on this machine first." |
+
+> **Correction.** An earlier version of this file claimed *"HTTP 200 is not
+> success — the API returns 200 with `success: false` for a SQL error."* **That
+> is wrong**: a SQL error returns **HTTP 400**. The claim came from a design
+> review and was never verified; P8 corrects it, and the fixtures are the record.
+>
+> The defensive habit it was arguing for is still right, just not for that
+> reason: the body carries an **outer `success`** *and* a **per-statement
+> `success`** inside `result[]`, and `errors[]` holds the only usable message. So
+> check both `success` fields and surface `errors[0].message` — but do not expect
+> a failure to arrive as a 200.
+
+`meta` (per statement) carries `rows_read`, `rows_written`, `changes`,
+`last_row_id`, `size_after`, `served_by_region`, `timings` and
+`total_attempts` — note that last one: **D1 retries internally**, so an apparent
+single call may already have been attempted more than once.
 
 ---
 
