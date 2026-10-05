@@ -165,3 +165,4 @@ from D1 and Qt on this machine. Read it before changing anything under
 `scripts/`.** In particular it records which SQL features D1 actually supports,
 what the free-tier read budget really costs, and the two probes still open
 against a live database.
+# kicad_partlib
