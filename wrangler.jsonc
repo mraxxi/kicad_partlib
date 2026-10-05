@@ -13,7 +13,7 @@
       "migrations_dir": "migrations"
     }
   ],
-  "vars": { "ACCESS_TEAM_DOMAIN": "", "ACCESS_AUD": "" },
+  "vars": { "ACCESS_TEAM_DOMAIN": "pmandiri.cloudflareaccess.com", "ACCESS_AUD": "91596b337fa04ee846b3f8201ee129fae9640b267ba63ba8fc064676c708d99d" },
   "env": {
     "staging": {
       "name": "kicad-partlib-staging",
@@ -25,7 +25,7 @@
           "migrations_dir": "migrations"
         }
       ],
-      "vars": { "ACCESS_TEAM_DOMAIN": "", "ACCESS_AUD": "" }
+      "vars": { "ACCESS_TEAM_DOMAIN": "pmandiri.cloudflareaccess.com", "ACCESS_AUD": "" }
     }
   }
 }

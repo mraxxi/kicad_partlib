@@ -41,6 +41,12 @@ describe('Cloudflare Access', () => {
     const res = await call({ ACCESS_TEAM_DOMAIN: TEAM, ACCESS_AUD: AUD }, { 'cf-access-jwt-assertion': token }, { jwks });
     expect((await res.json() as any).identity).toBe('cli.access');
   });
+  it('accepts the team domain pasted with https:// and a trailing slash', async () => {
+    const { jwks, sign } = await signer();
+    const token = await sign({ email: 'me@example.com' });
+    const res = await call({ ACCESS_TEAM_DOMAIN: `https://${TEAM}/`, ACCESS_AUD: AUD }, { 'cf-access-jwt-assertion': token }, { jwks });
+    expect(res.status).toBe(200);
+  });
   it('rejects a token minted for another application', async () => {
     const { jwks, sign } = await signer();
     const token = await sign({ email: 'me@example.com' }, 'some-other-aud');

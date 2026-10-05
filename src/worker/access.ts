@@ -15,7 +15,8 @@ const remote = new Map<string, JWTVerifyGetKey>();
 
 export function accessMiddleware(deps: { jwks?: JWTVerifyGetKey } = {}): MiddlewareHandler<{ Bindings: AppEnv; Variables: Vars }> {
   return async (c, next) => {
-    const team = c.env.ACCESS_TEAM_DOMAIN;
+    // Accept "team.cloudflareaccess.com" or the pasted "https://team.cloudflareaccess.com/".
+    const team = c.env.ACCESS_TEAM_DOMAIN.trim().replace(/^https?:\/\//i, '').replace(/\/+$/, '');
     const aud = c.env.ACCESS_AUD;
     if (team && aud) {
       const token = c.req.header('cf-access-jwt-assertion');
