@@ -7,6 +7,7 @@ interface PlanLine {
 }
 interface Order { orderNo: string; orderDate: string; fxIdrPerUsd: string; shippingIdr: number; dutiesIdr: number }
 interface Plan {
+  needsToClose?: Array<{ needId: number; projectName: string; mpn: string; qty: number }>;
   summary: { total: number; newParts: number; matchedParts: number; duplicates: number; lotsToCreate: number; piecesToReceive: number; totalUsdMicro: number };
   errors: string[]; warnings: string[]; lines: PlanLine[];
 }
@@ -86,6 +87,9 @@ export function ImportLcsc() {
       {plan && (
         <>
           {plan.errors.length > 0 && <div className="box bad"><b>Fix these first:</b><ul>{plan.errors.map((e) => <li key={e}>{e}</li>)}</ul></div>}
+          {plan.needsToClose && plan.needsToClose.length > 0 && (
+            <div className="box ok"><b>This order will close {plan.needsToClose.length} line{plan.needsToClose.length === 1 ? '' : 's'} on your buy list as received:</b>
+              <ul>{plan.needsToClose.map((n) => <li key={n.needId}>{n.projectName}: {n.mpn} × {n.qty}</li>)}</ul></div>)}
           {plan.warnings.length > 0 && <div className="box warn"><b>Worth a look:</b><ul>{plan.warnings.map((e) => <li key={e}>{e}</li>)}</ul></div>}
           <div className="box stats">
             <div><b>{plan.summary.newParts}</b><span>new parts</span></div>

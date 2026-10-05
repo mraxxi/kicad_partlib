@@ -5,6 +5,19 @@ D1 and is not tracked here; this file is about the code and the schema.
 
 ## [Unreleased]
 
+### Phase 3 — purchasing
+
+- **Migration `0005`**: `projects`, `needs` (one per project+part; frozen `ordered_*` cost), `quotes` (one per
+  part+supplier, price breaks, MOQ, listing shipping, risk, `quoted_at`).
+- **`src/domain/purchasing.ts`** (pure): stock allocation, price breaks, landed-cost ranking, supplier choice with
+  override, order grouping, recap, spend slices, price matrix, order-shipping rule, LCSC cart CSV. The owner's sheet
+  sample rows are ported as the acceptance fixture and reproduce to the rupiah.
+- **API/UI**: Projects (add needs, create missing parts), Buy list (edit need/spares/priority/supplier inline, recap,
+  matrix, mark ordered with a preview, LCSC cart download), Suppliers (shipping, free-shipping threshold), Quotes on
+  each part. Importing an LCSC order closes the buy-list lines it fulfils and says so in the preview.
+- Fixes three sheet errors: shared stock, per-line MOQ/shipping, ordered lines skewing ranking (AGENTS.md §11).
+- 82 tests.
+
 ### Phase 2 — inventory UI
 
 - **Migration `0004`**: `parts.min_qty` (reorder threshold, per part), `lots.create_key` (retry-safe lot

@@ -208,6 +208,24 @@ naming is the vocabulary they think in. Keep it; do not "tidy" it.
   supplier and waived above a threshold, supplier `Order Shipping`/`Free Shipping Over`) are the
   acceptance fixture for Phase 3: port the sample rows as tests.
 
+### Purchasing: where this app deliberately differs from the sheet
+The sheet's sample rows are the acceptance fixture and reproduce exactly, but three of its
+behaviours were errors and are fixed (all in `src/domain/purchasing.ts`, each with a test):
+1. **Stock is allocated across needs** (priority, then id). The sheet subtracted the whole stock from
+   every line, so two projects needing one part each "found" the same pieces.
+2. **Same part + same supplier is ordered together**: one MOQ, one listing shipping. The sheet charged both per line.
+3. **Ranking uses still-to-buy demand only**; an ordered line no longer pulls on the price.
+
+Other rules: ranking compares landed *totals* (integers; one part's quotes share a denominator), so no
+division touches a decision. Ties share a rank and are broken by lead time, then risk, then supplier id.
+A need's `ordered_*` columns freeze what it cost when marked ordered, so a later quote change cannot move money
+already committed. `ordered` is reached only through the order action (plan, then apply); a mistaken order is
+undone by reopening the need. Importing the real LCSC order **closes** matching ordered needs and the plan lists
+them first (rule: anything touching rows the owner did not name is shown in the plan). Quotes are whole IDR typed
+at quote time and show their age. The LCSC cart format lives in one function (`lcscCartCsv`): LCSC's BOM tool maps
+columns itself on upload (CSV/XLS/XLSX, <= 4 MB, <= 800 lines, needs Quantity plus a part identifier; verified
+2026-10-06), so the export is `LCSC Part Number,Quantity`.
+
 ## 12. Status
 
 | Phase | State |
@@ -215,6 +233,6 @@ naming is the vocabulary they think in. Keep it; do not "tidy" it.
 | 0 Pivot, schema, Worker skeleton, Access | done |
 | 1 LCSC import | **done**: API, domain, tests (99 parts/100 lots/100 moves; sheet value cross-check) and the browser form at `/` (preview, correct date/FX, apply). Migrations 0002 and 0003 are applied to **both** D1 databases (both were empty). Nothing is deployed yet and Access is not configured |
 | 2 Inventory UI, locations, donors, dashboard | **done**: parts table (search/filter/sort), part detail with lots + history, stock actions (use, adjust, count, scrap, move/mark with lot split), add stock, locations and donors CRUD, keyboard-first harvest, dashboard with usage meters, part edit with `rev` conflict diff. Migration `0004` is applied **locally only** — apply to staging then production before deploying |
-| 3 Purchasing (projects, needs, quotes, landed cost, recap, LCSC cart export) | schema not written yet |
+| 3 Purchasing | **done**: projects, needs, quotes (one per part+supplier, price breaks, MOQ), stock allocation across needs, landed-cost ranking, buy list with override, recap with order shipping once per supplier, spend by project/priority, price matrix, plan-then-apply "mark ordered" that freezes cost, LCSC import that closes ordered needs, LCSC cart CSV. The sheet's sample rows reproduce to the rupiah (`tests/purchasing.test.ts`). Migrations `0004` and `0005` are applied **locally only** |
 | 4 KiCad link (BOM import, library index) | see `docs/deferred/bom-reconciliation.md` |
 | 5 Labels/QR, FX cron, weekly backup Action, Sheet migration | - |

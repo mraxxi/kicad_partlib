@@ -1,3 +1,4 @@
+import { normalizeManufacturer } from '../domain/normalize';
 import { partCode, stockStatus, type Condition, type PartSummary, type Source } from '../domain/stock';
 import { Meter } from './meter';
 import { refuse, type Outcome } from './result';
@@ -161,4 +162,26 @@ export async function updatePart(db: D1Database, meter: Meter, id: number, rev: 
     currentRev: p.rev,
     fields: Object.fromEntries(keys.map((k) => [k, { yours: edit[k], current: now_[k] }])),
   });
+}
+
+export interface NewPart { mpn: string; manufacturer: string; description: string; package: string; value: string; category: string | null; lcscCode: string | null }
+
+/**
+ * A part you want to buy but do not own yet (a buy list needs somewhere to point).
+ * Identity is (mpn, manufacturer) and, when given, the C-number; creating a part
+ * that already exists is refused with its code, not silently duplicated.
+ */
+export async function createPart(db: D1Database, meter: Meter, p: NewPart, now: string): Promise<Outcome<{ id: number; code: string }>> {
+  const norm = normalizeManufacturer(p.manufacturer);
+  const dup = await meter.all<{ id: number }>(
+    db.prepare(`SELECT id FROM parts WHERE (mpn = ?1 COLLATE NOCASE AND manufacturer_norm = ?2) OR (?3 IS NOT NULL AND lcsc_code = ?3) LIMIT 1`)
+      .bind(p.mpn, norm, p.lcscCode),
+  );
+  if (dup[0]) return refuse(409, `That part already exists as ${partCode(dup[0].id)}.`);
+  const r = await db.prepare(
+    `INSERT INTO parts(mpn, manufacturer, manufacturer_norm, category_id, description, package, value, lcsc_code, created_at, updated_at)
+     VALUES (?1, ?2, ?3, (SELECT id FROM categories WHERE name = ?4), ?5, ?6, ?7, ?8, ?9, ?9)`,
+  ).bind(p.mpn, p.manufacturer, norm, p.category, p.description, p.package, p.value, p.lcscCode, now).run();
+  meter.add(r);
+  return { ok: true, id: r.meta.last_row_id, code: partCode(r.meta.last_row_id) };
 }

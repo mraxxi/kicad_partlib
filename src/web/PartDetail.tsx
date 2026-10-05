@@ -4,6 +4,7 @@ import { CONDITIONS, CONDITION_LABEL, SOURCE_LABEL, STATUS_LABEL, isEstimatedCos
 import { ApiError, api, newId } from './api';
 import { idr, num, unitIdr, when } from './format';
 import { useCategories, useLocations, useRefreshStock, type Location } from './hooks';
+import { Quotes } from './Quotes';
 
 interface Lot {
   id: number; source: 'order' | 'salvage' | 'manual'; condition: Condition; qtyOnHand: number; unitCostIdrMicro: number;
@@ -169,6 +170,7 @@ export function PartDetail({ id }: { id: number }) {
         <tbody>{lots.map((l) => <LotRow key={l.id} lot={l} locations={locations} refresh={refresh} />)}</tbody>
       </table></div>
       <AddStock partId={p.id} locations={locations} onDone={refresh} />
+      <Quotes partId={p.id} />
       <h2>History</h2>
       <div className="scroll"><table>
         <thead><tr><th>When</th><th>Lot</th><th>Reason</th><th className="num">Change</th><th>Note</th></tr></thead>

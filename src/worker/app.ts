@@ -3,12 +3,13 @@ import { validate as zValidator } from './validate';
 import { z } from 'zod';
 import type { JWTVerifyGetKey } from 'jose';
 import { Meter } from '../db/meter';
-import { applyLcscImport, buildPlan, findSupplierId } from '../db/lcscImport';
-import { orderDateFromOrderNo, parseLcscCsv, parseLcscFilename, type Plan } from '../domain/lcsc';
+import { applyLcscImport, buildPlan, findSupplierId, type ImportPlan } from '../db/lcscImport';
+import { orderDateFromOrderNo, parseLcscCsv, parseLcscFilename } from '../domain/lcsc';
 import { MoneyError, parseMicro } from '../domain/money';
 import { CsvError } from '../domain/csv';
 import { accessMiddleware } from './access';
 import { inventoryRoutes } from './inventory';
+import { purchasingRoutes } from './purchasing';
 import type { AppEnv, Vars } from './env';
 
 const FREE_LIMITS = { rowsRead: 5_000_000, rowsWritten: 100_000, requests: 100_000 } as const;
@@ -35,9 +36,10 @@ async function sha256Hex(text: string): Promise<string> {
   return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-function planView(plan: Plan) {
+function planView(plan: ImportPlan) {
   return {
     summary: plan.summary,
+    needsToClose: plan.needsToClose,
     errors: plan.errors,
     warnings: plan.warnings,
     lines: plan.lines.map((l) => ({
@@ -72,6 +74,7 @@ export function makeApp(deps: { jwks?: JWTVerifyGetKey } = {}) {
   });
 
   app.route('/api', inventoryRoutes());
+  app.route('/api', purchasingRoutes());
 
   app.get('/api/health', (c) => c.json({ ok: true, identity: c.get('identity') }));
 
@@ -142,7 +145,7 @@ export function makeApp(deps: { jwks?: JWTVerifyGetKey } = {}) {
       { supplierId, orderNo, orderDate, fxIdrPerUsdMicro, shippingIdr: body.shippingIdr, dutiesIdr: body.dutiesIdr },
       plan, { name: body.filename, sha256 }, new Date().toISOString(),
     );
-    return c.json({ mode: 'applied', order, summary: plan.summary, rowsWritten: result.rowsWritten, rowsRead: result.rowsRead });
+    return c.json({ mode: 'applied', order, summary: plan.summary, closedNeeds: plan.needsToClose.length, rowsWritten: result.rowsWritten, rowsRead: result.rowsRead });
   });
 
   return app;

@@ -35,5 +35,20 @@ export const useDonors = () => useQuery({ queryKey: ['donors'], queryFn: async (
 /** Stock changed: everything derived from lots is stale. */
 export function useRefreshStock() {
   const qc = useQueryClient();
-  return () => Promise.all(['parts', 'part', 'dashboard', 'locations', 'donors', 'usage'].map((k) => qc.invalidateQueries({ queryKey: [k] })));
+  return () => Promise.all(['parts', 'part', 'dashboard', 'locations', 'donors', 'usage', 'buylist'].map((k) => qc.invalidateQueries({ queryKey: [k] })));
+}
+
+import type { BuyList } from '../domain/purchasing';
+export interface SupplierRow {
+  id: number; name: string; kind: string; orderShippingIdr: number; freeShipOverIdr: number | null; leadDays: number | null; url: string | null; notes: string | null;
+}
+export interface ProjectRow { id: number; name: string; status: string; kicadProject: string | null; notes: string; needCount: number; toBuyCount: number }
+export const useBuyList = () => useQuery({ queryKey: ['buylist'], queryFn: () => api<{ buyList: BuyList; suppliers: SupplierRow[] }>('/buylist') });
+export const useProjects = () => useQuery({ queryKey: ['projects'], queryFn: async () => (await api<{ projects: ProjectRow[] }>('/projects')).projects });
+export const useSuppliers = () => useQuery({ queryKey: ['suppliers'], queryFn: async () => (await api<{ suppliers: SupplierRow[] }>('/suppliers')).suppliers });
+
+/** Anything that changes needs, quotes or stock changes what to buy. */
+export function useRefreshBuying() {
+  const qc = useQueryClient();
+  return () => Promise.all(['buylist', 'projects', 'quotes', 'suppliers', 'parts', 'part', 'dashboard'].map((k) => qc.invalidateQueries({ queryKey: [k] })));
 }

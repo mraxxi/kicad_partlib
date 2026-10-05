@@ -20,12 +20,16 @@ export async function findSupplierId(db: D1Database, meter: Meter, name: string)
  * Read-only: gather what the pure planner needs. Set-based via json_each, which
  * keeps it to one subrequest and under D1's 100-bound-parameter ceiling.
  */
+/** A buy-list line this import will close, shown in the plan because the owner did not name it. */
+export interface NeedToClose { needId: number; projectName: string; mpn: string; qty: number }
+export type ImportPlan = Plan & { needsToClose: NeedToClose[] };
+
 export async function buildPlan(
   db: D1Database,
   meter: Meter,
   meta: Pick<OrderMeta, 'supplierId' | 'orderNo'>,
   lines: LcscLine[],
-): Promise<Plan> {
+): Promise<ImportPlan> {
   const codes = JSON.stringify(lines.map((l) => l.lcsc));
   const mpns = JSON.stringify(lines.map((l) => l.mpn));
   const [partRes, orderRes] = await db.batch([
@@ -47,11 +51,21 @@ export async function buildPlan(
   ]);
   meter.add(partRes!);
   meter.add(orderRes!);
-  return planLcscImport({
+  const plan = planLcscImport({
     lines,
     existingParts: partRes!.results as unknown as ExistingPart[],
     existingOrderPartIds: new Set((orderRes!.results as Array<{ partId: number }>).map((r) => r.partId)),
   });
+  // Needs marked ORDERED from this supplier for a part on this order: importing the real order closes them.
+  const partIds = JSON.stringify(plan.lines.map((l) => l.partId).filter((id): id is number => id !== null));
+  const needs = await meter.all<NeedToClose>(
+    db.prepare(
+      `SELECT n.id AS needId, pr.name AS projectName, pa.mpn, n.ordered_qty AS qty
+         FROM needs n JOIN projects pr ON pr.id = n.project_id JOIN parts pa ON pa.id = n.part_id
+        WHERE n.status = 'ordered' AND n.ordered_supplier_id = ?1 AND n.part_id IN (SELECT value FROM json_each(?2))`,
+    ).bind(meta.supplierId, partIds),
+  );
+  return { ...plan, needsToClose: needs };
 }
 
 // Resolves a line's part: the id when it matched an existing part, otherwise the
@@ -76,14 +90,14 @@ export async function applyLcscImport(
   db: D1Database,
   meter: Meter,
   meta: OrderMeta,
-  plan: Plan,
+  plan: ImportPlan,
   file: { name: string; sha256: string },
   now: string,
 ): Promise<ApplyResult> {
   if (plan.errors.length) throw new Error('A plan with errors cannot be applied.');
   const live = plan.lines.filter((l) => l.action !== 'skip_duplicate');
   // Re-importing a file that is already fully in changes nothing, including no log row.
-  if (live.length === 0) return { rowsRead: 0, rowsWritten: 0 };
+  if (live.length === 0 && plan.needsToClose.length === 0) return { rowsRead: 0, rowsWritten: 0 };
   const before = { r: meter.rowsRead, w: meter.rowsWritten };
 
   const created = live.filter((l) => l.action === 'create_part');
@@ -173,6 +187,13 @@ export async function applyLcscImport(
         `UPDATE lots SET qty_on_hand = (SELECT COALESCE(SUM(delta), 0) FROM stock_moves WHERE lot_id = lots.id)
           WHERE order_line_id IN (SELECT id FROM order_lines
                                    WHERE order_id = (SELECT id FROM orders WHERE supplier_id = ?1 AND order_no = ?2))`,
+      )
+      .bind(meta.supplierId, meta.orderNo),
+    db
+      .prepare(
+        `UPDATE needs SET status = 'received', order_id = (SELECT id FROM orders WHERE supplier_id = ?1 AND order_no = ?2), rev = rev + 1
+          WHERE status = 'ordered' AND ordered_supplier_id = ?1
+            AND part_id IN (SELECT part_id FROM order_lines WHERE order_id = (SELECT id FROM orders WHERE supplier_id = ?1 AND order_no = ?2))`,
       )
       .bind(meta.supplierId, meta.orderNo),
     db

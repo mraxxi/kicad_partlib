@@ -33,7 +33,7 @@ export async function count(table: string): Promise<number> {
 export async function reset(): Promise<void> {
   const triggers = await env.DB.prepare("SELECT sql FROM sqlite_master WHERE type='trigger'").all<{ sql: string }>();
   await env.DB.exec("DROP TRIGGER IF EXISTS stock_moves_no_update;DROP TRIGGER IF EXISTS stock_moves_no_delete;");
-  for (const t of ['stock_moves', 'lots', 'order_lines', 'orders', 'part_aliases', 'parts', 'donors', 'locations', 'import_runs', 'usage_daily']) {
+  for (const t of ['needs', 'quotes', 'projects', 'stock_moves', 'lots', 'order_lines', 'orders', 'part_aliases', 'parts', 'donors', 'locations', 'import_runs', 'usage_daily']) {
     await env.DB.exec(`DELETE FROM ${t};`);
   }
   for (const t of triggers.results) await env.DB.exec(t.sql.replace(/\s*\n\s*/g, ' '));
