@@ -1,0 +1,23 @@
+:root { --bg:#fff; --fg:#1a1d21; --muted:#667085; --line:#e4e7ec; --accent:#2457d6; --ok:#067647; --warn:#b54708; --bad:#b42318; --chip:#f2f4f7; }
+@media (prefers-color-scheme: dark) { :root { --bg:#14171b; --fg:#e8eaed; --muted:#98a2b3; --line:#2b3037; --accent:#7aa2ff; --ok:#47cd89; --warn:#fdb022; --bad:#f97066; --chip:#222830; } }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.5 system-ui, sans-serif; }
+main { max-width: 1100px; margin: 0 auto; padding: 24px 16px 64px; }
+h1 { font-size: 20px; margin: 0 0 4px; } p.lede { color: var(--muted); margin: 0 0 20px; }
+form { display:grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap:12px; align-items:end; margin-bottom:16px; }
+label { display:flex; flex-direction:column; gap:4px; font-size:13px; color:var(--muted); }
+input { font:inherit; color:var(--fg); background:var(--bg); border:1px solid var(--line); border-radius:6px; padding:7px 9px; }
+button { font:inherit; border:1px solid var(--accent); background:var(--accent); color:#fff; border-radius:6px; padding:8px 14px; cursor:pointer; }
+button.secondary { background:transparent; color:var(--accent); }
+button:disabled { opacity:.45; cursor:not-allowed; }
+.row { display:flex; gap:10px; flex-wrap:wrap; margin:12px 0; }
+.box { border:1px solid var(--line); border-radius:8px; padding:12px 14px; margin:12px 0; }
+.box.bad { border-color: var(--bad); } .box.warn { border-color: var(--warn); } .box.ok { border-color: var(--ok); }
+.box ul { margin:6px 0 0; padding-left:18px; }
+.stats { display:flex; gap:20px; flex-wrap:wrap; } .stats b { display:block; font-size:20px; } .stats span { color:var(--muted); font-size:13px; }
+.scroll { overflow-x:auto; }
+table { border-collapse:collapse; width:100%; font-size:13px; }
+th, td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--line); white-space:nowrap; }
+td.num, th.num { text-align:right; font-variant-numeric: tabular-nums; }
+.chip { background:var(--chip); border-radius:99px; padding:1px 8px; font-size:12px; }
+.chip.create_part { color:var(--ok); } .chip.skip_duplicate { color:var(--muted); } .chip.review { color:var(--warn); }

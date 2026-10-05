@@ -1,0 +1,2 @@
+# Copy to .dev.vars (gitignored). Local development only.
+ALLOW_UNAUTHENTICATED=true

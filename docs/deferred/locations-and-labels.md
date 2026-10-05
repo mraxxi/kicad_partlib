@@ -1,3 +1,5 @@
+> **Partly superseded (2026-10-06).** The Worker pivot made `locations` a real table in Phase 2 and replaced the event ledger with `stock_moves` + cached `lots.qty_on_hand`. The label/QR parts (`/l/<lot id>`) are Phase 5. Read this for the design intent, not the schema.
+
 # Deferred design: physical locations and printed labels
 
 **Status:** designed, not built. Deliberately out of v1.

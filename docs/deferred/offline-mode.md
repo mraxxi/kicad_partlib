@@ -1,3 +1,5 @@
+> **Written for the Python/REST design (superseded 2026-10-06).** The tradeoff analysis still holds; the mechanisms (`inv export`, per-device ledger) need rethinking for the Worker. Still deferred.
+
 # Deferred design: offline mode
 
 **Status:** stub, and deliberately unbuilt. **Do not start this as a patch.**

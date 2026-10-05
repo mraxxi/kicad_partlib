@@ -1,0 +1,33 @@
+{
+  "name": "kicad_partlib",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.web.json",
+    "test": "vitest run",
+    "dev": "wrangler dev",
+    "build:web": "vite build",
+    "dev:web": "vite",
+    "deploy": "vite build && wrangler deploy"
+  },
+  "dependencies": {
+    "@hono/zod-validator": "^0.9.1",
+    "drizzle-orm": "^0.45.3",
+    "hono": "^4.13.13",
+    "jose": "^6.2.12",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.22.0",
+    "@cloudflare/workers-types": "^5.20261005.1",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.2",
+    "vitest": "^4.1.11",
+    "wrangler": "^4.147.0"
+  }
+}
