@@ -234,7 +234,7 @@ export function PartDetail({ id, embedded = false }: { id: number; embedded?: bo
         <div><b>{num(p.usableQty)}</b><span>usable</span></div>
         <div><b>{num(p.totalQty)}</b><span>total on hand</span></div>
         <div><b><span className={`chip st-${p.status}`}>{STATUS_LABEL[p.status]}</span></b><span>stock status</span></div>
-        <div><b>{idr(p.valueRealIdr)}</b><span>value (paid for)</span></div>
+        <div><b className="money">{idr(p.valueRealIdr)}</b><span>value (paid for)</span></div>
         {p.valueEstimatedIdr > 0 && <div><b>~{idr(p.valueEstimatedIdr)}</b><span>salvaged, estimated</span></div>}
       </div>
       <h2>Details</h2>

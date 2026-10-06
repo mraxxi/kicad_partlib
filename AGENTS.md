@@ -276,3 +276,4 @@ matched identically. Rules worth keeping:
 | 5 Labels/QR, FX cron, weekly backup Action, Sheet migration | - |
 | Spec enrichment (Value, Key specs, sort chains) | **built**, see `docs/spec-enrichment.md` (section 12): quantity parser, 11 spec families, LCSC fetch/plan/apply, Key specs + sort chain + presets in the table, Settings editor, Enrich page. Migration `0006` is applied to **both** D1 databases |
 | Part images | **built**, see `docs/part-images.md`: LCSC's first image at 900x900 (JPEG, about 60 KB, stored untouched in D1 `part_images`), shown in the side panel and on the part page, bulk fetch on the Enrich page. Image field and sizes verified against a real LCSC response. Migration `0007` is applied to **both** D1 databases (production 2026-10-06, after an export) and the Worker is deployed to both |
+| Look (lcsc.com design system) | **built**, see `docs/design-system.md`: colour tokens, two-tier header, badges, money in price orange. CSS only |

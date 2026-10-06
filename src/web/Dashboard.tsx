@@ -23,8 +23,8 @@ export function Dashboard() {
       <div className="box stats">
         <div><b>{num(d.partLines)}</b><span>parts</span></div>
         <div><b>{num(d.unitsOnHand)}</b><span>units on hand</span></div>
-        <div><b>{idr(d.valueRealIdr)}</b><span>stock value (paid for)</span></div>
-        <div><b>{idr(d.valueEstimatedIdr)}</b><span>salvaged value, estimated</span></div>
+        <div><b className="money">{idr(d.valueRealIdr)}</b><span>stock value (paid for)</span></div>
+        <div><b className="est-value">{idr(d.valueEstimatedIdr)}</b><span>salvaged value, estimated</span></div>
       </div>
       <div className="box stats">
         <div><b>{d.reorderCount}</b><span>below minimum</span></div>
