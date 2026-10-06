@@ -1,5 +1,6 @@
 import { DEFAULT_FIELD_MAP, packageFromFootprint, type BomLine, type FieldMap } from '../domain/kicadBom';
-import { planBom, prepareCandidates, suggestFor, type BomPlan, type Candidate, type ExistingNeed, type LineStatus, type LinkRule, type StoredLine, type Suggestion } from '../domain/bomPlan';
+import { matchedPartIds, prepareNames, type NamePart } from '../domain/bomNames';
+import { planBom, prepareCandidates, suggestAny, type BomPlan, type Candidate, type ExistingNeed, type LineStatus, type LinkRule, type StoredLine, type Suggestion } from '../domain/bomPlan';
 import type { ExistingPart } from '../domain/lcsc';
 import { Meter } from './meter';
 import { refuse, type Outcome } from './result';
@@ -32,6 +33,22 @@ async function candidatesFor(db: D1Database, meter: Meter, footprints: string[])
        FROM parts p WHERE p.package IN (SELECT value FROM json_each(?)) AND p.value <> '' LIMIT 3000`).bind(JSON.stringify(pkgs)));
 }
 
+/**
+ * Parts a part-name Value could match, with stock. Only done when a line needs it. The light list of parts is read once
+ * (id, MPN, package, C-number: a few thousand rows at most, see the cap) and matched in memory, because normalised
+ * prefix matching (case and punctuation ignored) cannot use an index; stock is then read for the matched parts only.
+ */
+async function nameCandidatesFor(db: D1Database, meter: Meter, lines: ReadonlyArray<Pick<BomLine, 'value' | 'refs' | 'lcsc' | 'mpn'>>): Promise<NamePart[]> {
+  const all = prepareNames((await meter.all<Omit<NamePart, 'usableQty'>>(db.prepare(
+    'SELECT id, mpn, package, lcsc_code AS lcscCode, value FROM parts ORDER BY id LIMIT 5000'))).map((p) => ({ ...p, usableQty: 0 })));
+  const ids = matchedPartIds(lines, all);
+  if (ids.size === 0) return [];
+  const stock = new Map((await meter.all<{ partId: number; qty: number }>(db.prepare(
+    `SELECT part_id AS partId, SUM(qty_on_hand) AS qty FROM lots WHERE condition <> 'faulty' AND part_id IN (SELECT value FROM json_each(?)) GROUP BY part_id`,
+  ).bind(JSON.stringify([...ids])))).map((r) => [r.partId, r.qty]));
+  return all.filter((p) => ids.has(p.id)).map(({ id, mpn, package: pkg, lcscCode, value }) => ({ id, mpn, package: pkg, lcscCode, value, usableQty: stock.get(id) ?? 0 }));
+}
+
 /** Read-only: gather what the pure planner needs, then plan. Writes nothing. */
 export async function buildBomPlan(db: D1Database, meter: Meter, projectId: number, lines: BomLine[], boards: number): Promise<Loaded> {
   const codes = JSON.stringify(lines.map((l) => l.lcsc).filter(Boolean));
@@ -57,10 +74,11 @@ export async function buildBomPlan(db: D1Database, meter: Meter, projectId: numb
   const linkedIds = [...new Set([...stored.map((s) => s.partId), ...remembered.values()].filter((x): x is number => x !== null))];
   const idRows = linkedIds.length ? await meter.all<{ id: number }>(db.prepare('SELECT id FROM parts WHERE id IN (SELECT value FROM json_each(?))').bind(JSON.stringify(linkedIds))) : [];
   const candidates = await candidatesFor(db, meter, lines.map((l) => l.footprint));
+  const nameParts = await nameCandidatesFor(db, meter, lines);
   const bom = (bomRes!.results as unknown as Array<{ boards: number; sha256: string }>)[0];
   return {
     projectExists: (projRes!.results as unknown[]).length === 1, boards: bom?.boards ?? null, sha256: bom?.sha256 ?? null, stored,
-    plan: planBom({ lines, existingParts: partRes!.results as unknown as ExistingPart[], remembered, stored, candidates, boards, needs, partIds: new Set(idRows.map((r) => r.id)) }),
+    plan: planBom({ lines, existingParts: partRes!.results as unknown as ExistingPart[], remembered, stored, candidates, nameParts, boards, needs, partIds: new Set(idRows.map((r) => r.id)) }),
   };
 }
 
@@ -162,10 +180,16 @@ export async function getBom(db: D1Database, meter: Meter, projectId: number): P
   const rows = lineRes!.results as unknown as Array<Omit<BomLineView, 'suggestions'>>;
   const open = rows.filter((r) => r.partId === null && r.status === 'active');
   const cands = prepareCandidates(open.length ? await candidatesFor(db, meter, open.map((r) => r.footprint)) : []);
+  const asLine = (r: { key: string; refs: string; qty: number; value: string; footprint: string }): BomLine => ({
+    row: 0, key: r.key, refs: r.refs.split(/,\s*/), qty: r.qty, value: r.value, footprint: r.footprint,
+    // A stored line keyed 'vf:' had no LCSC number or MPN when it was imported.
+    lcsc: r.key.startsWith('vf:') ? '' : 'x', mpn: '', manufacturer: '', dnp: false, raw: {},
+  });
+  const names = prepareNames(open.length ? await nameCandidatesFor(db, meter, open.map(asLine)) : []);
   const lines = rows.map((r): BomLineView => ({
     ...r,
     suggestions: r.partId === null && r.status === 'active'
-      ? suggestFor({ row: 0, key: r.key, refs: r.refs.split(/,\s*/), qty: r.qty, value: r.value, footprint: r.footprint, lcsc: '', mpn: '', manufacturer: '', dnp: false, raw: {} }, cands) : [],
+      ? suggestAny(asLine(r), cands, names) : [],
   }));
   return { ...bom, lines };
 }

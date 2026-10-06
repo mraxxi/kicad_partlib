@@ -182,7 +182,7 @@ export function ProjectBom({ projectId }: { projectId: number }) {
                     </td>
                   </tr>
                   {l.partId === null && l.status === 'active' && l.suggestions.length > 0 && open?.id !== l.id && (
-                    <tr key={`${l.id}-s`}><td colSpan={9} className="lede">Looks like: {l.suggestions.map((s) => <button key={s.partId} className="link" onClick={() => edit.mutate({ line: l, partId: s.partId })}>{s.mpn} ({s.value}, {s.usableQty} in stock)</button>).reduce<React.ReactNode[]>((a, x, i) => (i ? [...a, ' · ', x] : [x]), [])}</td></tr>)}
+                    <tr key={`${l.id}-s`}><td colSpan={9} className="lede">Looks like: {l.suggestions.map((s) => <button key={s.partId} className="link" onClick={() => edit.mutate({ line: l, partId: s.partId })}>{s.mpn} ({[s.value, `${s.usableQty} in stock`].filter(Boolean).join(', ')})</button>).reduce<React.ReactNode[]>((a, x, i) => (i ? [...a, ' · ', x] : [x]), [])}</td></tr>)}
                   {open?.id === l.id && <tr key={`${l.id}-o`}><td colSpan={9}>{open.mode === 'link' ? <LinkPicker onPick={(partId) => edit.mutate({ line: l, partId })} /> : <CreatePart line={l} onDone={changed} />}</td></tr>}
                 </Fragment>
               );
