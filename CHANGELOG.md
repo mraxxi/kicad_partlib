@@ -5,6 +5,11 @@ D1 and is not tracked here; this file is about the code and the schema.
 
 ## [Unreleased]
 
+### Housekeeping
+
+- Removed `tests/__pycache__/*.pyc`, left over from the Phase-0 Python tests, and ignored Python bytecode.
+- Removed the unused `drizzle-orm` dependency (AGENTS.md section 3: deliberately not used).
+
 ### Importing an LCSC cart export
 
 - **Import page** now has two tabs: the order export (parts that arrived) and the **cart export** (parts to buy).
