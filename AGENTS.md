@@ -257,8 +257,12 @@ matched identically. Rules worth keeping:
   scrollbar out of reach.
 * **Rows are virtualised** (`@tanstack/react-virtual`, fixed row height from the density setting). Anything that makes
   row height variable (wrapping text) breaks the maths; cells truncate with an ellipsis and a tooltip instead.
-* **Columns are data** (the `columns` array in `Parts.tsx`). Saved layout (`partlib.layout.parts.v1`) is keyed by column
-  id; new columns are appended and pinned ones always lead. Filters, search and selection are URL parameters.
+* **Columns are data** (the `columns` array in `Parts.tsx`; order rules in `columns.ts`). Saved layout (`partlib.layout.parts.v3`) is
+  keyed by column id; new columns are appended and pinned ones always lead. Columns reorder by native drag and drop (header or
+  Columns menu), never a library; the drag handle is the header label so the resize handle keeps working.
+* **Spec filters** (`SpecFilters.tsx`, `domain/specs/facets.ts`): Footprint always, plus one per spec of the lone family. Counts are
+  faceted (computed against the OTHER filters); they are URL parameters `pkg` and `sp.<spec>`, ignored when the family on screen
+  has no such spec. Filtering happens after the family test so it can never change which family the table thinks it shows. Filters, search and selection are URL parameters.
 * **Preferences are per browser** (`prefs.ts`, `localStorage`, fail soft) and are display only; they are not data and
   must never gate behaviour.
 * The size of the table is measured with `clientWidth` on mount, on window resize **and after every render** (the
@@ -276,5 +280,6 @@ matched identically. Rules worth keeping:
 | 5 Labels/QR, FX cron, weekly backup Action, Sheet migration | - |
 | Spec enrichment (Value, Key specs, sort chains) | **built**, see `docs/spec-enrichment.md` (section 12): quantity parser, 11 spec families, LCSC fetch/plan/apply, Key specs + sort chain + presets in the table, Settings editor, Enrich page. Migration `0006` is applied to **both** D1 databases |
 | Part images | **built**, see `docs/part-images.md`: LCSC's first image at 900x900 (JPEG, about 60 KB, stored untouched in D1 `part_images`), shown in the side panel and on the part page, bulk fetch on the Enrich page. Image field and sizes verified against a real LCSC response. Migration `0007` is applied to **both** D1 databases (production 2026-10-06, after an export) and the Worker is deployed to both |
+| Parts columns + spec filters | **built**: LCSC # after MPN, drag-and-drop column order, Footprint and per-spec checklist filters with faceted counts. Browser only, no migration |
 | Look (lcsc.com design system) | **built**, see `docs/design-system.md`: colour tokens, two-tier header, badges, money in price orange. CSS only |
 | Import fixes | **built**: blank error box fixed (`Refusal`), clearer refusals, order/cart names (`src/domain/labels.ts`, Import page lists). Migration `0008` is applied **nowhere** yet |

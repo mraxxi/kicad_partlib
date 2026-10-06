@@ -156,3 +156,20 @@ button.tab.on, button.tab.on:hover { background:var(--primary-tint); color:var(-
 .part-head { display:flex; gap:14px; align-items:flex-start; margin-bottom:8px; }
 .part-head .lede { margin:0; }
 .part-image img { display:block; border:1px solid var(--line); border-radius:6px; background:#fff; }
+
+/* ---- column drag and drop (Parts) ---- */
+.th-label[draggable="true"] { cursor:grab; }
+table.vt th.drop-before { box-shadow: inset 3px 0 0 var(--primary); } table.vt th.drop-after { box-shadow: inset -3px 0 0 var(--primary); }
+.chooser-row.draggable { cursor:grab; }
+.chooser-row.drop-before { box-shadow: inset 0 2px 0 var(--primary); } .chooser-row.drop-after { box-shadow: inset 0 -2px 0 var(--primary); }
+
+/* ---- spec filters (Parts) ---- */
+.facets { display:flex; flex-wrap:wrap; align-items:center; gap:6px; padding:0 0 6px; }
+.facets-title { font-size:12px; color:var(--muted); margin-right:2px; }
+.facet { position:relative; }
+.facet button.on { border-color:var(--primary); background:var(--primary-tint); color:var(--primary); }
+.facet-pop { position:absolute; left:0; top:calc(100% + 4px); z-index:20; min-width:200px; max-width:320px; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:8px 10px; box-shadow:0 8px 24px rgba(0,0,0,.2); }
+.facet-pop ul { list-style:none; margin:0 0 6px; padding:0; max-height:50vh; overflow:auto; }
+.facet-pop li label { display:flex; flex-direction:row; align-items:center; gap:6px; color:var(--fg); font-size:14px; padding:2px 0; cursor:pointer; }
+.facet-label { flex:1; } .facet-count { color:var(--muted); font-variant-numeric:tabular-nums; font-size:12px; }
+.facet-find { width:100%; margin-bottom:6px; } .facet-empty { color:var(--muted); font-size:13px; }
