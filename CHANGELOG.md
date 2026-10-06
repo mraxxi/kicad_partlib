@@ -5,6 +5,19 @@ D1 and is not tracked here; this file is about the code and the schema.
 
 ## [Unreleased]
 
+### KiCad BOM import
+
+- A project page has a **BOM** section: upload KiCad's BOM CSV (and how many boards), preview what each line matched and why,
+  apply. Linked lines become ordinary needs, so the buy list, stock allocation and LCSC cart CSV work on them. Each line shows
+  on hand, for this project and to buy. Design and rules: `docs/kicad-bom.md`.
+- Every line is editable afterwards: link to a part (search), accept a suggestion (same value and package), create a part from a
+  C-number LCSC lists or a typed MPN, mark DNP or ignored, unlink. A line that is not identified yet stays a BOM line ("to
+  identify"), not a fake part. A re-import keeps hand links, shows quantity changes and cancels needs for removed lines; ordered
+  needs are never touched. The same file twice changes nothing.
+- The BOM columns that hold the LCSC number, MPN and manufacturer are a setting (`bom.fields`), editable on the BOM section.
+- Migration `0009_bom.sql` (`project_bom`, `bom_lines`). `parseCsv` takes an optional delimiter; `mpnKey` is exported so BOM
+  lines are matched with the same identity as the order and cart imports.
+
 ### Look: modeled on lcsc.com
 
 - The UI now follows a design system taken from the lcsc.com storefront: LCSC blue (`#1166dd`) for links, the active tab and

@@ -1,4 +1,5 @@
-> **Written for the Python design.** Phase 4 of the Worker plan (BOM import, field-name map in `settings`) supersedes the mechanics; the matching ideas still apply.
+> **Partly built.** The BOM import into a project (matching, to-identify lines, needs, shortfall) is built: see `docs/kicad-bom.md`.
+> What remains deferred here is recording consumption when a board is built, reading `.kicad_sch` directly and the `kicad_customlib` index sync. The rest of this file was written for the Python design.
 
 # Deferred design: BOM reconciliation against a KiCad project
 
