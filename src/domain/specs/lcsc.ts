@@ -1,3 +1,4 @@
+import { firstImageUrl } from '../image';
 import type { LcscDetail } from './types';
 
 interface RawResult {
@@ -16,7 +17,7 @@ export function trimLcscResponse(body: unknown): LcscDetail | null {
   if (!r || !r.productCode) return null;
   return {
     productCode: r.productCode, productModel: r.productModel ?? '', brand: r.brandNameEn, catalog: r.catalogName ?? '',
-    parentCatalog: r.parentCatalogName, package: r.encapStandard, intro: r.productIntroEn, desc: r.productDescEn, datasheet: r.pdfUrl,
+    parentCatalog: r.parentCatalogName, package: r.encapStandard, intro: r.productIntroEn, desc: r.productDescEn, datasheet: r.pdfUrl, ...(firstImageUrl(r) ? { image: firstImageUrl(r)! } : {}),
     params: (r.paramVOList ?? []).map((p) => ({ name: p.paramNameEn ?? '', value: p.paramValueEn ?? '', number: p.paramValueEnForSearch ?? null })).filter((p) => p.name),
   };
 }

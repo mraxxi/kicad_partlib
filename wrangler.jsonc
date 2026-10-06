@@ -25,7 +25,7 @@
           "migrations_dir": "migrations"
         }
       ],
-      "vars": { "ACCESS_TEAM_DOMAIN": "pmandiri.cloudflareaccess.com", "ACCESS_AUD": "" }
+      "vars": { "ACCESS_TEAM_DOMAIN": "pmandiri.cloudflareaccess.com", "ACCESS_AUD": "2aed8c9d9f25e3eac060292029321740bb4e48d5f15cea5502980107dcda581a" }
     }
   }
 }

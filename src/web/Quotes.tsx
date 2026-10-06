@@ -38,7 +38,7 @@ export function Quotes({ partId }: { partId: number }) {
         <div className="scroll"><table>
           <thead><tr><th>Supplier</th><th>Seller</th><th className="num">Unit</th><th className="num">MOQ</th><th>Price breaks</th><th className="num">Listing shipping</th><th className="num">Lead</th><th>Risk</th><th>Quoted</th><th /></tr></thead>
           <tbody>{quotes.map((q) => (
-            <tr key={q.id}><td>{q.url ? <a href={q.url} target="_blank" rel="noreferrer">{q.supplierName}</a> : q.supplierName}</td><td>{q.seller}</td><td className="num">{idr(q.unitPriceIdr)}</td><td className="num">{q.moq}</td>
+            <tr key={q.id}><td>{q.url ? <a href={q.url} target="_blank" rel="noreferrer">{q.supplierName}</a> : q.supplierName}</td><td>{q.seller}</td><td className="num money">{idr(q.unitPriceIdr)}</td><td className="num">{q.moq}</td>
               <td>{breaksText(q.priceBreaks)}</td><td className="num">{idr(q.listingShippingIdr)}</td><td className="num">{q.leadDays ?? ''}</td><td>{q.risk}</td>
               <td className={ageDays(q.quotedAt) > 30 ? 'err' : ''}>{ageDays(q.quotedAt) === 0 ? 'today' : `${ageDays(q.quotedAt)} d ago`}</td>
               <td><button className="link" onClick={() => edit(q)}>Edit</button><button className="link" onClick={() => del.mutate(q.id)}>Delete</button></td></tr>))}</tbody>

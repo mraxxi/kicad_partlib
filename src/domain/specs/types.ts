@@ -18,7 +18,7 @@ export type SpecKind = 'number' | 'range' | 'text';
 /** The LCSC response as stored in `part_enrichment.raw_json` (trimmed from the original; see lcsc.ts). */
 export interface LcscDetail {
   productCode: string; productModel: string; brand?: string; catalog: string; parentCatalog?: string; package?: string;
-  intro?: string; desc?: string; datasheet?: string; params: Array<{ name: string; value: string; number: number | null }>;
+  intro?: string; desc?: string; datasheet?: string; /** LCSC's first product image (https, LCSC host), if the response had one. */ image?: string; params: Array<{ name: string; value: string; number: number | null }>;
 }
 
 export interface SpecDef {

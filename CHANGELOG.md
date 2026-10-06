@@ -5,6 +5,28 @@ D1 and is not tracked here; this file is about the code and the schema.
 
 ## [Unreleased]
 
+### Look: modeled on lcsc.com
+
+- The UI now follows a design system taken from the lcsc.com storefront: LCSC blue (`#1166dd`) for links, the active tab and
+  primary buttons; LCSC's price orange for money (unit prices, landed cost, Best pick, stock value) and for buy actions
+  (Mark ordered, Download LCSC cart); a light grey page with white panels and tables; Poppins with a system fallback.
+- A two-tier header: a deep-blue system bar over a white tab bar (the bar hides on a phone).
+- Badges for condition, stock status and need status use a tint ground with matching dark text, so every badge is at least
+  4.5:1 in light and dark. Need status now has its own colours (To buy orange, Ordered blue, Covered by stock outlined,
+  Cancelled struck through).
+- All colours are tokens at the top of `src/web/style.css`; the old names (`--bg`, `--accent`, ...) are mapped onto them.
+  Notes on each token and component: `docs/design-system.md`. CSS and a few class names only; no behaviour change.
+
+### Part images
+
+- A **picture of the part** (LCSC's first image) on the part page and in the side panel beside the parts table. Design, free-tier
+  cost and what is still unverified: `docs/part-images.md`.
+- LCSC publishes each picture at several sizes, so the Worker stores the **900x900 JPEG (about 60 KB) exactly as LCSC sends it**: no
+  resizing anywhere (the smaller 96 and 224 px versions look blurry because the part is small in the photo). Shown at 160 px in
+  the side panel and 360 px on the part page. Bytes live in their own table `part_images` (migration `0007`), never read by a list.
+- **Enrich page** has a "Fetch part images" button (parts with a C-number and no image); a part page offers "Fetch image".
+- 194 tests. Migration `0007` is not applied anywhere yet.
+
 ### Importing an LCSC cart export
 
 - **Import page** now has two tabs: the order export (parts that arrived) and the **cart export** (parts to buy).

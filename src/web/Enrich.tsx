@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { familyById, formatSpec, type SpecChange } from '../domain/specs';
 import { api } from './api';
 import { useParts } from './hooks';
+import { IMAGE_CHUNK, fetchPartImages, outcomeText } from './partImage';
 
 interface PlanItem {
   partId: number; mpn: string; lcscCode: string | null; family: string; familyLabel: string;
@@ -46,6 +47,21 @@ export function Enrich() {
     setMsg(`${stop.current ? 'Stopped. ' : ''}Fetched ${tally.ok ?? 0}; ${tally.not_listed ?? 0} no longer listed${tally.error ? `; ${tally.error} failed and will be retried next time` : ''}.`);
   });
 
+  // Ten parts per request: each costs the Worker two LCSC requests, and a request may make at most 50.
+  const fetchImages = () => run('images', async () => {
+    const { parts: todo } = await api<{ parts: Array<{ partId: number }> }>('/images/pending');
+    if (todo.length === 0) { setMsg('Every part with a C-number already has an image.'); return; }
+    let done = 0, bytes = 0; const failed: Record<string, number> = {};
+    for (let i = 0; i < todo.length && !stop.current; i += IMAGE_CHUNK) {
+      setProgress(`Fetching images\u2026 ${Math.min(i + IMAGE_CHUNK, todo.length)} of ${todo.length}`);
+      for (const o of await fetchPartImages(todo.slice(i, i + IMAGE_CHUNK).map((p) => p.partId))) {
+        if (o.status === 'stored') { done++; bytes += o.bytes ?? 0; } else { const m = outcomeText(o); failed[m] = (failed[m] ?? 0) + 1; }
+      }
+    }
+    const why = Object.entries(failed).map(([m, n]) => `${n} \u00d7 ${m}`).join(' ');
+    setMsg(`${stop.current ? 'Stopped. ' : ''}Stored ${done} images (${Math.round(bytes / 1024)} KB in total).${why ? ` Not stored: ${why}` : ''}`);
+  });
+
   const review = () => run('plan', async () => {
     const ids = (parts ?? []).map((p) => p.id);
     const all: PlanItem[] = [];
@@ -85,6 +101,12 @@ export function Enrich() {
         <h2 style={{ marginTop: 0 }}>1. Fetch from LCSC</h2>
         <p className="lede">Asks LCSC about each part that has a C-number and has not been asked yet, a few at a time, and keeps its answer. Nothing about your parts changes in this step.</p>
         <div className="row"><button onClick={fetchAll} disabled={busy}>Fetch from LCSC</button>{busy && <button className="secondary" onClick={() => { stop.current = true; }}>Stop</button>}</div>
+      </div>
+
+      <div className="box">
+        <h2 style={{ marginTop: 0 }}>Part images</h2>
+        <p className="lede">Fetches LCSC&rsquo;s first picture for each part that has a C-number and no picture yet, keeps LCSC&rsquo;s full 900&times;900 picture (about 60 KB, so it stays sharp). Parts that have an older, smaller picture are fetched again. Parts you already have a picture for are skipped.</p>
+        <div className="row"><button onClick={fetchImages} disabled={busy}>Fetch part images</button>{busy && <button className="secondary" onClick={() => { stop.current = true; }}>Stop</button>}</div>
       </div>
 
       <div className="box">
