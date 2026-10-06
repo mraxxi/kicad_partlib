@@ -1,5 +1,5 @@
 import { DEFAULT_FIELD_MAP, packageFromFootprint, type BomLine, type FieldMap } from '../domain/kicadBom';
-import { planBom, suggestFor, type BomPlan, type Candidate, type LineStatus, type LinkRule, type StoredLine, type Suggestion } from '../domain/bomPlan';
+import { planBom, prepareCandidates, suggestFor, type BomPlan, type Candidate, type ExistingNeed, type LineStatus, type LinkRule, type StoredLine, type Suggestion } from '../domain/bomPlan';
 import type { ExistingPart } from '../domain/lcsc';
 import { Meter } from './meter';
 import { refuse, type Outcome } from './result';
@@ -33,22 +33,25 @@ async function candidatesFor(db: D1Database, meter: Meter, footprints: string[])
 }
 
 /** Read-only: gather what the pure planner needs, then plan. Writes nothing. */
-export async function buildBomPlan(db: D1Database, meter: Meter, projectId: number, lines: BomLine[]): Promise<Loaded> {
+export async function buildBomPlan(db: D1Database, meter: Meter, projectId: number, lines: BomLine[], boards: number): Promise<Loaded> {
   const codes = JSON.stringify(lines.map((l) => l.lcsc).filter(Boolean));
   const mpns = JSON.stringify(lines.map((l) => l.mpn).filter(Boolean));
   const keys = JSON.stringify(lines.map((l) => l.key));
-  const [projRes, bomRes, partRes, storedRes, remRes] = await db.batch([
+  const [projRes, bomRes, partRes, storedRes, remRes, needRes] = await db.batch([
     db.prepare('SELECT id FROM projects WHERE id = ?').bind(projectId),
     db.prepare('SELECT boards, sha256 FROM project_bom WHERE project_id = ?').bind(projectId),
     db.prepare(
       `SELECT id, mpn, manufacturer, manufacturer_norm AS manufacturerNorm, lcsc_code AS lcscCode FROM parts
         WHERE lcsc_code IN (SELECT value FROM json_each(?1)) OR mpn COLLATE NOCASE IN (SELECT value FROM json_each(?2))`).bind(codes, mpns),
-    db.prepare('SELECT id, line_key AS key, part_id AS partId, link_rule AS linkRule, status, qty FROM bom_lines WHERE project_id = ?').bind(projectId),
+    db.prepare('SELECT id, line_key AS key, part_id AS partId, link_rule AS linkRule, status, qty, refs, value FROM bom_lines WHERE project_id = ?').bind(projectId),
     db.prepare(
       `SELECT line_key AS key, part_id AS partId, MAX(id) FROM bom_lines
         WHERE link_rule = 'manual' AND part_id IS NOT NULL AND project_id <> ?1 AND line_key IN (SELECT value FROM json_each(?2)) GROUP BY line_key`).bind(projectId, keys),
+    db.prepare('SELECT part_id AS partId, qty_needed AS qty, status, bom_owned AS owned FROM needs WHERE project_id = ?').bind(projectId),
   ]);
-  for (const r of [projRes!, bomRes!, partRes!, storedRes!, remRes!]) meter.add(r);
+  for (const r of [projRes!, bomRes!, partRes!, storedRes!, remRes!, needRes!]) meter.add(r);
+  const needs = new Map((needRes!.results as unknown as Array<{ partId: number; qty: number; status: ExistingNeed['status']; owned: number }>)
+    .map((r): [number, ExistingNeed] => [r.partId, { qty: r.qty, status: r.status, owned: r.owned === 1 }]));
   const stored = storedRes!.results as unknown as StoredLine[];
   const remembered = new Map((remRes!.results as unknown as Array<{ key: string; partId: number }>).map((r) => [r.key, r.partId]));
   const linkedIds = [...new Set([...stored.map((s) => s.partId), ...remembered.values()].filter((x): x is number => x !== null))];
@@ -57,34 +60,41 @@ export async function buildBomPlan(db: D1Database, meter: Meter, projectId: numb
   const bom = (bomRes!.results as unknown as Array<{ boards: number; sha256: string }>)[0];
   return {
     projectExists: (projRes!.results as unknown[]).length === 1, boards: bom?.boards ?? null, sha256: bom?.sha256 ?? null, stored,
-    plan: planBom({ lines, existingParts: partRes!.results as unknown as ExistingPart[], remembered, stored, candidates, partIds: new Set(idRows.map((r) => r.id)) }),
+    plan: planBom({ lines, existingParts: partRes!.results as unknown as ExistingPart[], remembered, stored, candidates, boards, needs, partIds: new Set(idRows.map((r) => r.id)) }),
   };
 }
 
 /**
- * Make the project's needs agree with its BOM, for every part the BOM links: need = pieces per board x boards, summed
- * over active lines. Only needs still being decided (to_buy / covered / cancelled) move: an ORDERED or RECEIVED need
- * has frozen money and is never touched. A part that no longer has an active line gets its to_buy need cancelled
- * (reversible: reopen it), never deleted. `extraPartIds` are parts just unlinked, which no longer appear in bom_lines.
+ * Make the needs the BOM OWNS agree with its lines, for the given parts only: need = pieces per board x boards, summed over
+ * active lines. Ownership (`needs.bom_owned`) is what keeps this honest:
+ *  - a part with no need yet gets one, owned by the BOM;
+ *  - an owned to_buy / covered need follows the BOM's quantity; an owned need the BOM cancelled comes back when its line does;
+ *  - an owned to_buy need whose part has no active line left is CANCELLED (reopenable), never deleted;
+ *  - a need the owner typed or edited (bom_owned = 0), and any ordered or received need (frozen cost), is never touched.
+ * `guard` makes a single-line edit's sync conditional on that line still being at the revision the edit produced, so a
+ * refused (stale) edit changes nothing here either, in the same atomic batch.
  */
-export function syncNeedStatements(db: D1Database, projectId: number, now: string, extraPartIds: number[] = []): D1PreparedStatement[] {
+export function syncNeedStatements(db: D1Database, projectId: number, now: string, partIds: number[], guard: { lineId: number; rev: number } | null = null): D1PreparedStatement[] {
+  const ids = JSON.stringify([...new Set(partIds)]);
+  const g = guard ? `AND EXISTS (SELECT 1 FROM bom_lines WHERE id = ?4 AND rev = ?5)` : '';
+  const gb = guard ? [guard.lineId, guard.rev] : [];
   return [
     db.prepare(
-      `INSERT INTO needs(project_id, part_id, qty_needed, spares, priority, created_at)
-       SELECT ?1, t.part_id, t.total, 0, 'medium', ?2 FROM (
+      `INSERT INTO needs(project_id, part_id, qty_needed, spares, priority, bom_owned, created_at)
+       SELECT ?1, t.part_id, t.total, 0, 'medium', 1, ?2 FROM (
          SELECT b.part_id AS part_id, SUM(b.qty) * (SELECT boards FROM project_bom WHERE project_id = ?1) AS total
-           FROM bom_lines b WHERE b.project_id = ?1 AND b.status = 'active' AND b.part_id IS NOT NULL GROUP BY b.part_id) t
-        WHERE t.total > 0
+           FROM bom_lines b WHERE b.project_id = ?1 AND b.status = 'active' AND b.part_id IN (SELECT value FROM json_each(?3)) GROUP BY b.part_id) t
+        WHERE t.total > 0 ${g}
        ON CONFLICT(project_id, part_id) DO UPDATE SET qty_needed = excluded.qty_needed, rev = needs.rev + 1,
               status = CASE WHEN needs.status = 'cancelled' THEN 'to_buy' ELSE needs.status END
-        WHERE needs.status IN ('to_buy', 'covered', 'cancelled') AND (needs.qty_needed <> excluded.qty_needed OR needs.status = 'cancelled')`,
-    ).bind(projectId, now),
+        WHERE needs.bom_owned = 1 AND needs.status IN ('to_buy', 'covered', 'cancelled') AND (needs.qty_needed <> excluded.qty_needed OR needs.status = 'cancelled')`,
+    ).bind(projectId, now, ids, ...gb),
     db.prepare(
       `UPDATE needs SET status = 'cancelled', rev = rev + 1
-        WHERE project_id = ?1 AND status = 'to_buy'
-          AND (part_id IN (SELECT part_id FROM bom_lines WHERE project_id = ?1 AND part_id IS NOT NULL) OR part_id IN (SELECT value FROM json_each(?2)))
-          AND part_id NOT IN (SELECT part_id FROM bom_lines WHERE project_id = ?1 AND status = 'active' AND part_id IS NOT NULL)`,
-    ).bind(projectId, JSON.stringify(extraPartIds)),
+        WHERE project_id = ?1 AND bom_owned = 1 AND status = 'to_buy' AND part_id IN (SELECT value FROM json_each(?2))
+          AND part_id NOT IN (SELECT part_id FROM bom_lines WHERE project_id = ?1 AND status = 'active' AND part_id IS NOT NULL)
+          ${guard ? 'AND EXISTS (SELECT 1 FROM bom_lines WHERE id = ?3 AND rev = ?4)' : ''}`,
+    ).bind(projectId, ids, ...gb),
   ];
 }
 
@@ -122,7 +132,7 @@ export async function applyBomPlan(
   statements.push(
     db.prepare(`UPDATE bom_lines SET status = 'removed', rev = rev + 1 WHERE project_id = ?1 AND status <> 'removed' AND line_key NOT IN (SELECT value FROM json_each(?2))`)
       .bind(a.projectId, JSON.stringify(live.map((l) => l.key))),
-    ...syncNeedStatements(db, a.projectId, a.now),
+    ...syncNeedStatements(db, a.projectId, a.now, a.plan.lines.map((l) => l.partId).filter((x): x is number => x !== null)),
   );
   await meter.batch(db, statements);
   return { rowsWritten: meter.rowsWritten - before, unchanged: false };
@@ -150,7 +160,7 @@ export async function getBom(db: D1Database, meter: Meter, projectId: number): P
   if (!bom) return null;
   const rows = lineRes!.results as unknown as Array<Omit<BomLineView, 'suggestions'>>;
   const open = rows.filter((r) => r.partId === null && r.status === 'active');
-  const cands = open.length ? await candidatesFor(db, meter, open.map((r) => r.footprint)) : [];
+  const cands = prepareCandidates(open.length ? await candidatesFor(db, meter, open.map((r) => r.footprint)) : []);
   const lines = rows.map((r): BomLineView => ({
     ...r,
     suggestions: r.partId === null && r.status === 'active'
@@ -179,7 +189,8 @@ export async function updateBomLine(db: D1Database, meter: Meter, id: number, re
   if (e.status !== undefined) { sets.push('status = ?'); vals.push(e.status); }
   const results = await meter.batch(db, [
     db.prepare(`UPDATE bom_lines SET ${sets.join(', ')} WHERE id = ? AND rev = ?`).bind(...vals, id, rev),
-    ...syncNeedStatements(db, cur.project_id, now, cur.part_id !== null ? [cur.part_id] : []),
+    // Only the parts this line touches (its old and new link), and only if the revision check passed.
+    ...syncNeedStatements(db, cur.project_id, now, [cur.part_id, e.partId].filter((x): x is number => typeof x === 'number'), { lineId: id, rev: rev + 1 }),
   ]);
   if (results[0]!.meta.changes === 1) return { ok: true, rev: rev + 1 };
   return refuse(409, 'This BOM line was changed somewhere else since you loaded it; nothing was saved. Reload and try again.', { currentRev: cur.rev });

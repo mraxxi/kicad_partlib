@@ -44,13 +44,13 @@ export function bomRoutes(deps: { lcscFetch?: LcscFetcher } = {}) {
     if (parsed.errors.length) return c.json({ errors: parsed.errors }, 422);
     if (parsed.lines.length > BOM_MAX_LINES) return c.json({ error: `This BOM has ${parsed.lines.length} lines and the limit is ${BOM_MAX_LINES}; split it by sheet or board.` }, 422);
 
-    const loaded = await buildBomPlan(c.env.DB, meter, projectId, parsed.lines);
+    const loaded = await buildBomPlan(c.env.DB, meter, projectId, parsed.lines, b.boards);
     if (!loaded.projectExists) return c.json({ error: `There is no project ${projectId}.` }, 404);
     const plan = loaded.plan;
     plan.warnings.unshift(...parsed.warnings);
 
     const view = {
-      boards: b.boards, previousBoards: loaded.boards, summary: plan.summary, warnings: plan.warnings,
+      boards: b.boards, previousBoards: loaded.boards, summary: plan.summary, warnings: plan.warnings, needs: plan.needs,
       sameFile: loaded.sha256 === await sha256Hex(b.csv) && loaded.boards === b.boards,
       lines: plan.lines.map((l) => ({
         key: l.key, row: l.line?.row ?? null, refs: l.line?.refs.join(', ') ?? '', value: l.line?.value ?? '', footprint: l.line?.footprint ?? '',

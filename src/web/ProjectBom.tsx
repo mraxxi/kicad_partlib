@@ -12,9 +12,15 @@ interface BomLine {
 }
 interface Bom { boards: number; fileName: string; importedAt: string; lines: BomLine[] }
 interface PlanLine { key: string; row: number | null; refs: string; value: string; footprint: string; qty: number | null; qtyBefore: number | null; action: 'new' | 'same' | 'changed' | 'removed'; partId: number | null; linkRule: string | null; status: Status; suggestions: Suggestion[] }
+interface NeedChange { partId: number; label: string; action: 'create' | 'update' | 'reopen' | 'cancel' | 'hand' | 'locked' | 'same'; current: number | null; bom: number }
+const NEED_TEXT: Record<NeedChange['action'], string> = {
+  create: 'new need', update: 'quantity changes', reopen: 'cancelled need comes back', cancel: 'need is cancelled (no active line left)',
+  hand: 'you set this: your number is kept', locked: 'already ordered or received: not changed', same: 'unchanged',
+};
 interface PlanResp {
+  needs: NeedChange[];
   mode: 'plan' | 'applied'; boards: number; sameFile: boolean; unchanged?: boolean; rowsWritten?: number; warnings: string[]; lines: PlanLine[];
-  summary: { total: number; linked: number; toIdentify: number; dnp: number; added: number; changed: number; removed: number; unchanged: number };
+  summary: { total: number; linked: number; toIdentify: number; dnp: number; added: number; changed: number; removed: number; unchanged: number; needsCreated: number; needsChanged: number; needsKept: number };
 }
 
 const reasonProblem = (j: { error?: string; errors?: string[] }, status: number) => (j.error || j.errors?.length ? { error: j.error, errors: j.errors } : { error: noReason(status) });
@@ -55,6 +61,10 @@ function Upload({ projectId, boards, onApplied }: { projectId: number; boards: n
         <>
           <p>{plan.summary.total} lines: {plan.summary.linked} matched, <b>{plan.summary.toIdentify} to identify</b>, {plan.summary.dnp} DNP. {plan.summary.added} new, {plan.summary.changed} changed, {plan.summary.removed} no longer in the BOM, {plan.summary.unchanged} unchanged.
             {plan.sameFile && <> This is the file already loaded for {plan.boards} board(s); applying it changes nothing.</>}</p>
+          <p>Needs: {plan.summary.needsCreated} new, {plan.summary.needsChanged} changed, <b>{plan.summary.needsKept} kept as you set them</b>. Only needs this BOM created are ever changed by it.</p>
+          {plan.needs.some((x) => x.action !== 'same') && (
+            <table><thead><tr><th>Part</th><th className="num">Now</th><th className="num">BOM says</th><th>What happens</th></tr></thead>
+              <tbody>{plan.needs.filter((x) => x.action !== 'same').map((x) => <tr key={x.partId}><td>{x.label}</td><td className="num">{x.current ?? ''}</td><td className="num">{x.bom}</td><td>{NEED_TEXT[x.action]}</td></tr>)}</tbody></table>)}
           {plan.warnings.length > 0 && <div className="box warn"><b>Check these:</b><ul>{plan.warnings.map((w, i) => <li key={i}>{w}</li>)}</ul></div>}
           <table><thead><tr><th>Refs</th><th>Value</th><th>Footprint</th><th className="num">Qty/board</th><th>Match</th><th>Change</th></tr></thead>
             <tbody>{plan.lines.map((l) => (

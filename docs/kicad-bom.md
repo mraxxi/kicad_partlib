@@ -39,19 +39,29 @@ one with the real part would need a merge, which the app refuses. When the real 
 ## Needs
 
 Linked, active lines make ordinary needs: pieces per board x boards, summed per part, so the buy list, stock allocation, landed
-cost, the LCSC cart CSV and "Mark ordered" work unchanged.
+cost, the LCSC cart CSV and "Mark ordered" work unchanged. **The BOM only ever changes needs it created.** `needs.bom_owned`
+records that:
 
-- The BOM is the source for the quantity of a part it links: a re-import (or a link edit) sets the need to the BOM's number.
-- An **ordered or received** need is never changed: its cost is frozen.
-- A part with no active line left (line removed from the BOM, ignored, DNP, unlinked) gets its **to-buy** need **cancelled**, never
-  deleted; reopening it undoes that. This applies to a need that was typed by hand for the same part too.
-- Cart import keeps an existing need's quantity, so a cart never overrides a BOM.
+| The part's need in this project | What an import (or a line edit) does |
+|---|---|
+| none | creates one, owned by the BOM |
+| owned by the BOM, to buy / covered | follows the BOM's quantity |
+| owned by the BOM, cancelled by the BOM (its line went away) | comes back when the line does |
+| owned by the BOM, to buy, no active line left | cancelled (never deleted; reopen undoes it) |
+| **typed by you**, or one whose quantity or status you edited (that hands it over: `updateNeed` clears `bom_owned`) | **left alone**; the preview says "you need 50 (set by you) and the BOM says 3; your number is kept" |
+| ordered or received (frozen cost) | left alone; the preview says the quantity is frozen |
+| cancelled by you | stays cancelled |
+
+The preview lists every need it would create, change, cancel or leave alone, before anything is written (the same rule as the
+cart import: "an existing need keeps its quantity and the plan says the cart disagrees"). A single line edit (link, unlink, DNP,
+ignore) re-syncs only the part it had and the part it now has, in the same batch as the edit, and only if the revision check
+passed; a stale edit changes nothing. Cart import keeps an existing need's quantity, so a cart never overrides a BOM either.
 
 ## Tables (migration `0009_bom.sql`)
 
 `project_bom` (one BOM per project: boards, file name, sha256) and `bom_lines` (line key = LCSC number, else MPN, else
 value|footprint; `part_id` NULL while to identify; `link_rule`; status active/dnp/ignored/removed; `fields_json` keeps the raw
-row; `rev` for conflict checks). No change to `parts`, `needs` or `stock_moves`.
+row; `rev` for conflict checks). One column added to `needs` (`bom_owned`, default 0, see above); no change to `parts` or `stock_moves`.
 
 ## Free-tier cost
 

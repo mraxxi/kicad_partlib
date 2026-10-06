@@ -8,7 +8,10 @@
 --    (a fake part would appear in Parts, Enrich and stock, and turning it into the real part would need a
 --    merge, which the app refuses). `link_rule` records how the link was made so a wrong one is visible;
 --    'manual' links are never replaced by a re-import. `fields_json` keeps the raw BOM row, nothing lost.
---  * Needs made from a BOM are ordinary needs rows; no change to parts, needs or stock_moves.
+--  * Needs made from a BOM are ordinary needs rows, but `needs.bom_owned` records that the BOM created one. The BOM
+--    may change the quantity of, cancel and reopen only the needs it owns. A need the owner typed (or edited: qty or status,
+--    see updateNeed) is never touched; the import preview shows where it disagrees with the BOM. No change to parts or stock_moves.
+--    ALTER TABLE ADD COLUMN is not idempotent; wrangler records this migration, so it runs once (as 0004 and 0006 did).
 -- --------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS project_bom (
     project_id  INTEGER PRIMARY KEY REFERENCES projects(id) ON DELETE RESTRICT,
@@ -17,6 +20,8 @@ CREATE TABLE IF NOT EXISTS project_bom (
     sha256      TEXT NOT NULL,
     imported_at TEXT NOT NULL
 );
+
+ALTER TABLE needs ADD COLUMN bom_owned INTEGER NOT NULL DEFAULT 0 CHECK (bom_owned IN (0, 1));
 
 CREATE TABLE IF NOT EXISTS bom_lines (
     id          INTEGER PRIMARY KEY,

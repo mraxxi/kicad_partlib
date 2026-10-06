@@ -262,3 +262,74 @@ describe('the field map', () => {
     expect((await run({ csv: BOM })).status).toBe(200);
   });
 });
+
+describe('needs you typed by hand are never the BOM\'s to change', () => {
+  const R100 = 'lcsc:C3017758';
+  const revised = BOM.replace('"R1,R2,R3",100R,Resistor_SMD:R_0603_1608Metric,3', '"R1,R2,R3,R4,R5,R6",100R,Resistor_SMD:R_0603_1608Metric,6');
+  const handNeed = async (qty: number) => { await api('/api/needs', { projectId: pid, partId: await partId('SCR0603J100R'), qtyNeeded: qty }); };
+  const r100 = async () => (await needs()).find((n) => n.mpn === 'SCR0603J100R')!;
+
+  it('survives the import, a re-import and a line edit, and the preview says where it disagrees', async () => {
+    await handNeed(50);
+    const plan = await run();
+    expect(plan.json.needs.find((n: any) => n.action === 'hand')).toMatchObject({ current: 50, bom: 3 });
+    expect(plan.json.warnings.join(' ')).toMatch(/you need 50 \(set by you\) and the BOM says 3; your number is kept/);
+    expect(plan.json.summary.needsKept).toBe(1);
+    await run({}, true);
+    expect(await r100()).toMatchObject({ qty: 50, status: 'to_buy' });
+    await run({ csv: revised }, true);
+    expect(await r100()).toMatchObject({ qty: 50, status: 'to_buy' });
+    const line = lineOf(await bom(), R100);
+    await call(`/api/bom-lines/${line.id}`, { rev: line.rev, status: 'ignored' }, 'PATCH');
+    expect(await r100()).toMatchObject({ qty: 50, status: 'to_buy' }); // not cancelled either
+    await call(`/api/bom-lines/${line.id}`, { rev: line.rev + 1, partId: null }, 'PATCH');
+    expect(await r100()).toMatchObject({ qty: 50, status: 'to_buy' });
+  });
+
+  it('a need the owner cancelled stays cancelled, and one whose quantity they edited is theirs from then on', async () => {
+    await run({}, true);
+    const cap = await partId('CGA0805X7R104K101KT');
+    const nid = (id: number) => env.DB.prepare('SELECT id, rev FROM needs WHERE part_id = ?').bind(id).first<{ id: number; rev: number }>();
+    const a = (await nid(await partId('SCR0603J100R')))!, c = (await nid(cap))!;
+    expect((await api(`/api/needs/${a.id}`, { rev: a.rev, status: 'cancelled' }, 'PATCH')).status).toBe(200);
+    expect((await api(`/api/needs/${c.id}`, { rev: c.rev, qtyNeeded: 9 }, 'PATCH')).status).toBe(200);
+    const plan = await run({ csv: revised });
+    expect(plan.json.needs.find((n: any) => n.partId === cap)).toMatchObject({ action: 'hand', current: 9 });
+    await run({ csv: revised }, true);
+    expect(await r100()).toMatchObject({ qty: 3, status: 'cancelled' });
+    expect((await needs()).find((n) => n.mpn === 'CGA0805X7R104K101KT')).toMatchObject({ qty: 9 });
+  });
+
+  it('a BOM-made need the BOM cancelled does come back when its line does', async () => {
+    await run({}, true);
+    const line = lineOf(await bom(), R100);
+    await call(`/api/bom-lines/${line.id}`, { rev: line.rev, status: 'ignored' }, 'PATCH');
+    expect(await r100()).toMatchObject({ status: 'cancelled' });
+    await call(`/api/bom-lines/${line.id}`, { rev: line.rev + 1, status: 'active' }, 'PATCH');
+    expect(await r100()).toMatchObject({ status: 'to_buy', qty: 3 });
+  });
+
+  it('lists every need change in the preview before anything is written', async () => {
+    const first = await run();
+    expect(first.json.summary).toMatchObject({ needsCreated: 2, needsChanged: 0, needsKept: 0 });
+    expect(first.json.needs.map((n: any) => n.action)).toEqual(['create', 'create']);
+    await run({}, true);
+    const second = await run({ csv: revised.replace(/\n"C1,C2",100nF.*HRE/, '') });
+    expect(second.json.needs.filter((n: any) => n.action !== 'same').map((n: any) => [n.action, n.current, n.bom]).sort()).toEqual([['cancel', 2, 0], ['update', 3, 6]]);
+    expect((await needs()).map((n) => [n.qty, n.status])).toEqual([[2, 'to_buy'], [3, 'to_buy']]); // preview wrote nothing
+  });
+
+  it('a line edit syncs only the parts it touches, and a stale edit changes no need at all', async () => {
+    await run({}, true);
+    // Drift an unrelated BOM-owned need on purpose: a whole-project re-sync would "repair" it, a scoped one must not.
+    await env.DB.prepare("UPDATE needs SET qty_needed = 77 WHERE part_id = ?").bind(await partId('CGA0805X7R104K101KT')).run();
+    const line = lineOf(await bom(), R100);
+    await call(`/api/bom-lines/${line.id}`, { rev: line.rev, status: 'dnp' }, 'PATCH');
+    expect((await needs()).find((n) => n.mpn === 'CGA0805X7R104K101KT')!.qty).toBe(77);
+    expect((await r100()).status).toBe('cancelled');
+    const revBefore = (await env.DB.prepare('SELECT rev FROM needs WHERE part_id = ?').bind(await partId('SCR0603J100R')).first<{ rev: number }>())!.rev;
+    const stale = await call(`/api/bom-lines/${line.id}`, { rev: line.rev, status: 'active' }, 'PATCH');
+    expect(stale.status).toBe(409);
+    expect((await env.DB.prepare('SELECT rev, status FROM needs WHERE part_id = ?').bind(await partId('SCR0603J100R')).first<any>())).toMatchObject({ rev: revBefore, status: 'cancelled' });
+  });
+});
