@@ -71,13 +71,13 @@ export async function buildBomPlan(db: D1Database, meter: Meter, projectId: numb
  *  - an owned to_buy / covered need follows the BOM's quantity; an owned need the BOM cancelled comes back when its line does;
  *  - an owned to_buy need whose part has no active line left is CANCELLED (reopenable), never deleted;
  *  - a need the owner typed or edited (bom_owned = 0), and any ordered or received need (frozen cost), is never touched.
- * `guard` makes a single-line edit's sync conditional on that line still being at the revision the edit produced, so a
- * refused (stale) edit changes nothing here either, in the same atomic batch.
+ * `guard` makes a single-line edit's sync conditional on THIS request's UPDATE having succeeded (it writes a one-off token
+ * the guard looks for), so a refused (stale) edit changes nothing here either, in the same atomic batch.
  */
-export function syncNeedStatements(db: D1Database, projectId: number, now: string, partIds: number[], guard: { lineId: number; rev: number } | null = null): D1PreparedStatement[] {
+export function syncNeedStatements(db: D1Database, projectId: number, now: string, partIds: number[], guard: { lineId: number; token: string } | null = null): D1PreparedStatement[] {
   const ids = JSON.stringify([...new Set(partIds)]);
-  const g = guard ? `AND EXISTS (SELECT 1 FROM bom_lines WHERE id = ?4 AND rev = ?5)` : '';
-  const gb = guard ? [guard.lineId, guard.rev] : [];
+  const g = guard ? `AND EXISTS (SELECT 1 FROM bom_lines WHERE id = ?4 AND edit_token = ?5)` : '';
+  const gb = guard ? [guard.lineId, guard.token] : [];
   return [
     db.prepare(
       `INSERT INTO needs(project_id, part_id, qty_needed, spares, priority, bom_owned, created_at)
@@ -93,7 +93,7 @@ export function syncNeedStatements(db: D1Database, projectId: number, now: strin
       `UPDATE needs SET status = 'cancelled', rev = rev + 1
         WHERE project_id = ?1 AND bom_owned = 1 AND status = 'to_buy' AND part_id IN (SELECT value FROM json_each(?2))
           AND part_id NOT IN (SELECT part_id FROM bom_lines WHERE project_id = ?1 AND status = 'active' AND part_id IS NOT NULL)
-          ${guard ? 'AND EXISTS (SELECT 1 FROM bom_lines WHERE id = ?3 AND rev = ?4)' : ''}`,
+          ${guard ? 'AND EXISTS (SELECT 1 FROM bom_lines WHERE id = ?3 AND edit_token = ?4)' : ''}`,
     ).bind(projectId, ids, ...gb),
   ];
 }
@@ -105,7 +105,7 @@ export function syncNeedStatements(db: D1Database, projectId: number, now: strin
  */
 export async function applyBomPlan(
   db: D1Database, meter: Meter,
-  a: { projectId: number; plan: BomPlan; boards: number; file: { name: string; sha256: string }; previous: { boards: number | null; sha256: string | null }; now: string },
+  a: { projectId: number; plan: BomPlan; boards: number; file: { name: string; sha256: string }; previous: { boards: number | null; sha256: string | null }; storedPartIds: number[]; now: string },
 ): Promise<{ rowsWritten: number; unchanged: boolean }> {
   if (a.plan.errors.length) throw new Error('A plan with errors cannot be applied.');
   if (a.previous.sha256 === a.file.sha256 && a.previous.boards === a.boards) return { rowsWritten: 0, unchanged: true };
@@ -132,7 +132,8 @@ export async function applyBomPlan(
   statements.push(
     db.prepare(`UPDATE bom_lines SET status = 'removed', rev = rev + 1 WHERE project_id = ?1 AND status <> 'removed' AND line_key NOT IN (SELECT value FROM json_each(?2))`)
       .bind(a.projectId, JSON.stringify(live.map((l) => l.key))),
-    ...syncNeedStatements(db, a.projectId, a.now, a.plan.lines.map((l) => l.partId).filter((x): x is number => x !== null)),
+    // New links AND the parts the stored lines were linked to: a line that moved from part X to part Y must release X's need.
+    ...syncNeedStatements(db, a.projectId, a.now, [...a.plan.lines.map((l) => l.partId), ...a.storedPartIds].filter((x): x is number => x !== null)),
   );
   await meter.batch(db, statements);
   return { rowsWritten: meter.rowsWritten - before, unchanged: false };
@@ -183,14 +184,15 @@ export async function updateBomLine(db: D1Database, meter: Meter, id: number, re
     const p = await meter.all<{ id: number }>(db.prepare('SELECT id FROM parts WHERE id = ?').bind(e.partId));
     if (!p[0]) return refuse(404, `There is no part ${e.partId}.`);
   }
-  const sets: string[] = ['rev = rev + 1'];
-  const vals: Array<string | number | null> = [];
+  const token = crypto.randomUUID();
+  const sets: string[] = ['rev = rev + 1', 'edit_token = ?'];
+  const vals: Array<string | number | null> = [token];
   if (e.partId !== undefined) { sets.push('part_id = ?', 'link_rule = ?'); vals.push(e.partId, e.partId === null ? null : 'manual'); }
   if (e.status !== undefined) { sets.push('status = ?'); vals.push(e.status); }
   const results = await meter.batch(db, [
     db.prepare(`UPDATE bom_lines SET ${sets.join(', ')} WHERE id = ? AND rev = ?`).bind(...vals, id, rev),
     // Only the parts this line touches (its old and new link), and only if the revision check passed.
-    ...syncNeedStatements(db, cur.project_id, now, [cur.part_id, e.partId].filter((x): x is number => typeof x === 'number'), { lineId: id, rev: rev + 1 }),
+    ...syncNeedStatements(db, cur.project_id, now, [cur.part_id, e.partId].filter((x): x is number => typeof x === 'number'), { lineId: id, token }),
   ]);
   if (results[0]!.meta.changes === 1) return { ok: true, rev: rev + 1 };
   return refuse(409, 'This BOM line was changed somewhere else since you loaded it; nothing was saved. Reload and try again.', { currentRev: cur.rev });

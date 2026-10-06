@@ -61,7 +61,7 @@ export function bomRoutes(deps: { lcscFetch?: LcscFetcher } = {}) {
 
     const res = await applyBomPlan(c.env.DB, meter, {
       projectId, plan, boards: b.boards, file: { name: b.filename, sha256: await sha256Hex(b.csv) },
-      previous: { boards: loaded.boards, sha256: loaded.sha256 }, now: now(),
+      previous: { boards: loaded.boards, sha256: loaded.sha256 }, storedPartIds: loaded.stored.map((l) => l.partId).filter((x): x is number => x !== null), now: now(),
     });
     return c.json({ mode: 'applied', ...view, ...res });
   });

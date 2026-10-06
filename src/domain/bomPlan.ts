@@ -56,7 +56,7 @@ export interface ExistingNeed { qty: number; status: 'to_buy' | 'ordered' | 'rec
  *  received need differs: frozen, kept.   same  nothing to do.
  */
 export type NeedAction = 'create' | 'update' | 'reopen' | 'cancel' | 'hand' | 'locked' | 'same';
-export interface NeedChange { partId: number; label: string; action: NeedAction; current: number | null; bom: number }
+export interface NeedChange { partId: number; label: string; action: NeedAction; current: number | null; /** The existing need's status, when there is one. */ status: ExistingNeed['status'] | null; bom: number }
 
 export interface BomPlan {
   needs: NeedChange[];
@@ -155,18 +155,20 @@ export function planBom(input: BomPlanInput): BomPlan {
     const cur = input.needs.get(partId);
     let action: NeedAction;
     if (!cur) action = 'create';
-    else if (!cur.owned) action = cur.qty === t.qty ? 'same' : 'hand';
+    else if (!cur.owned) action = cur.qty === t.qty && cur.status !== 'cancelled' ? 'same' : 'hand';
     else if (cur.status === 'ordered' || cur.status === 'received') action = cur.qty === t.qty ? 'same' : 'locked';
     else if (cur.status === 'cancelled') action = 'reopen';
     else action = cur.qty === t.qty ? 'same' : 'update';
-    needs.push({ partId, label: t.label, action, current: cur?.qty ?? null, bom: t.qty });
-    if (action === 'hand') warnings.push(`${t.label}: you need ${cur!.qty} (set by you) and the BOM says ${t.qty}; your number is kept.`);
+    needs.push({ partId, label: t.label, action, current: cur?.qty ?? null, status: cur?.status ?? null, bom: t.qty });
+    if (action === 'hand') warnings.push(cur!.status === 'cancelled'
+      ? `${t.label}: you cancelled the need for ${cur!.qty} (set by you) and the BOM says ${t.qty}; it stays cancelled.`
+      : `${t.label}: you need ${cur!.qty} (set by you) and the BOM says ${t.qty}; your number is kept.`);
     if (action === 'locked') warnings.push(`${t.label}: already ${cur!.status} for ${cur!.qty} and the BOM now says ${t.qty}; the ${cur!.status} quantity is frozen and not changed.`);
   }
   for (const s of input.stored) {
     if (s.status !== 'active' || s.partId === null || totals.has(s.partId)) continue;
     const cur = input.needs.get(s.partId);
-    if (cur?.owned && cur.status === 'to_buy') needs.push({ partId: s.partId, label: `${s.refs.split(/,\s*/).slice(0, 3).join(', ')} (${s.value || s.key})`, action: 'cancel', current: cur.qty, bom: 0 });
+    if (cur?.owned && cur.status === 'to_buy') needs.push({ partId: s.partId, label: `${s.refs.split(/,\s*/).slice(0, 3).join(', ')} (${s.value || s.key})`, action: 'cancel', current: cur.qty, status: cur.status, bom: 0 });
   }
 
   const live = out.filter((l) => l.action !== 'removed');

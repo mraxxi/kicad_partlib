@@ -332,4 +332,40 @@ describe('needs you typed by hand are never the BOM\'s to change', () => {
     expect(stale.status).toBe(409);
     expect((await env.DB.prepare('SELECT rev, status FROM needs WHERE part_id = ?').bind(await partId('SCR0603J100R')).first<any>())).toMatchObject({ rev: revBefore, status: 'cancelled' });
   });
+
+  it('says so when the need you cancelled is the one the BOM disagrees with', async () => {
+    await run({}, true);
+    const a = (await env.DB.prepare('SELECT id, rev FROM needs WHERE part_id = ?').bind(await partId('SCR0603J100R')).first<{ id: number; rev: number }>())!;
+    await api(`/api/needs/${a.id}`, { rev: a.rev, status: 'cancelled' }, 'PATCH');
+    const plan = await run({ csv: revised });
+    expect(plan.json.warnings.join(' ')).toMatch(/you cancelled the need for 3 \(set by you\) and the BOM says 6; it stays cancelled/);
+  });
+
+  it('a stale edit that is exactly one revision behind changes no need either', async () => {
+    await run({}, true);
+    const line = lineOf(await bom(), R100);
+    await call(`/api/bom-lines/${line.id}`, { rev: line.rev, status: 'dnp' }, 'PATCH'); // line is now one revision ahead
+    // The need was cancelled by that edit; reopen it by hand in the database so a wrongly-run sync would visibly cancel it again.
+    await env.DB.prepare("UPDATE needs SET status = 'to_buy', qty_needed = 77 WHERE part_id = ?").bind(await partId('SCR0603J100R')).run();
+    const stale = await call(`/api/bom-lines/${line.id}`, { rev: line.rev, status: 'ignored' }, 'PATCH');
+    expect(stale.status).toBe(409);
+    expect(await r100()).toMatchObject({ status: 'to_buy', qty: 77 });
+  });
+});
+
+describe('a line that moves to another part releases the first part\'s need', () => {
+  it('cancels the old part\'s BOM-owned need and creates the new one', async () => {
+    const bomText = 'Refs,Value,Footprint,Qty,MPN,MF\nC1,100n,Capacitor_SMD:C_0805_2012Metric,2,CGA0805X7R104K101KT,';
+    await run({ csv: bomText }, true);
+    const x = await partId('CGA0805X7R104K101KT');
+    expect((await needs()).map((n) => [n.mpn, n.status])).toEqual([['CGA0805X7R104K101KT', 'to_buy']]);
+    const made = await api('/api/parts', { mpn: 'CGA0805X7R104K101KT', manufacturer: 'Other Maker' });
+    expect(made.status).toBe(200);
+    const moved = bomText.replace('2,CGA0805X7R104K101KT,', '2,CGA0805X7R104K101KT,Other Maker');
+    const plan = await run({ csv: moved });
+    expect(plan.json.needs.map((n: any) => n.action).sort()).toEqual(['cancel', 'create']);
+    await run({ csv: moved }, true);
+    const rows = (await env.DB.prepare('SELECT part_id, status, qty_needed FROM needs ORDER BY part_id').all<any>()).results;
+    expect(rows).toEqual([{ part_id: x, status: 'cancelled', qty_needed: 2 }, { part_id: made.json.id, status: 'to_buy', qty_needed: 2 }]);
+  });
 });

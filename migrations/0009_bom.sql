@@ -36,6 +36,9 @@ CREATE TABLE IF NOT EXISTS bom_lines (
     link_rule   TEXT CHECK (link_rule IS NULL OR link_rule IN ('lcsc', 'mpn', 'remembered', 'manual')),
     status      TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'dnp', 'ignored', 'removed')),
     rev         INTEGER NOT NULL DEFAULT 0,
+    -- A random id written by one line edit: lets the same batch's need sync prove THIS request's UPDATE succeeded (a stale
+    -- edit that is one revision behind cannot be told from a winner by rev alone).
+    edit_token  TEXT,
     UNIQUE (project_id, line_key)
 );
 CREATE INDEX IF NOT EXISTS ix_bom_lines_key  ON bom_lines(line_key) WHERE part_id IS NOT NULL;
