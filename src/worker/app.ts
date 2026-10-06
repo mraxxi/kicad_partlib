@@ -5,6 +5,8 @@ import type { JWTVerifyGetKey } from 'jose';
 import { Meter } from '../db/meter';
 import { applyLcscImport, buildPlan, findSupplierId, type ImportPlan } from '../db/lcscImport';
 import { orderDateFromOrderNo, parseLcscCsv, parseLcscFilename } from '../domain/lcsc';
+import { cleanAlias, fxProblem, orderLabel } from '../domain/labels';
+import { importRoutes } from './imports';
 import { MoneyError, parseMicro } from '../domain/money';
 import { CsvError } from '../domain/csv';
 import { accessMiddleware } from './access';
@@ -25,7 +27,9 @@ const importBody = z.object({
   orderNo: z.string().regex(/^[A-Za-z0-9]{4,32}$/).optional(),
   orderDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   /** IDR per 1 USD, as a decimal string ("16250.5"): never a float. */
-  fxIdrPerUsd: z.string().regex(/^\d+(\.\d{1,6})?$/).optional(),
+  fxIdrPerUsd: z.string().trim().max(20).optional(),
+  /** A name for the order; display only, the order number stays the key. Empty means the default. */
+  alias: z.string().max(200).optional(),
   shippingIdr: z.number().int().min(0).default(0),
   dutiesIdr: z.number().int().min(0).default(0),
   apply: z.boolean().default(false),
@@ -68,9 +72,15 @@ export function makeApp(deps: { jwks?: JWTVerifyGetKey; lcscFetch?: LcscFetcher;
   });
 
   app.onError((err, c) => {
-    // Never echo err.message: it can carry SQL. The log has it; the client gets a sentence.
-    console.error('unhandled', err);
-    return c.json({ error: 'Something went wrong on the server; nothing was reported to the browser.' }, 500);
+    // Never echo err.message: it can carry SQL. The log has it; the client gets a sentence and a reference to find it.
+    const ref = c.req.header('cf-ray');
+    console.error('unhandled', ref ?? '', err);
+    const tail = ref ? ` (reference ${ref})` : '';
+    // Free-plan D1 refuses queries once a daily limit is used up (AGENTS.md section 2); say so instead of "something went wrong".
+    if (/D1_ERROR[^]*\b(daily (row )?(read|write)s? limit|quota|rows? (read|written) limit)\b/i.test(String(err))) return c.json({ error: `The database's free daily limit is used up, so nothing could be done; it resets at 07:00 WIB.${tail}` }, 503);
+    // An import applies in one atomic batch, so a failure there leaves nothing half-written.
+    if (c.req.method === 'POST' && c.req.path.startsWith('/api/import/')) return c.json({ error: `The import failed on the server and nothing was written; the details are in the Worker log${tail}.` }, 500);
+    return c.json({ error: `Something went wrong on the server and the details are only in its log${tail}.` }, 500);
   });
 
   app.route('/api', inventoryRoutes());
@@ -78,6 +88,7 @@ export function makeApp(deps: { jwks?: JWTVerifyGetKey; lcscFetch?: LcscFetcher;
   app.route('/api', enrichmentRoutes({ lcscFetch: deps.lcscFetch }));
   app.route('/api', imageRoutes({ lcscFetch: deps.lcscFetch, imageFetch: deps.imageFetch }));
   app.route('/api', cartRoutes());
+  app.route('/api', importRoutes());
 
   app.get('/api/health', (c) => c.json({ ok: true, identity: c.get('identity') }));
 
@@ -117,6 +128,10 @@ export function makeApp(deps: { jwks?: JWTVerifyGetKey; lcscFetch?: LcscFetcher;
     const orderDate = body.orderDate ?? orderDateFromOrderNo(orderNo) ?? fromName?.exportedAt;
     if (!orderDate || !isRealDate(orderDate)) return fail(['Enter the order date as YYYY-MM-DD.']);
 
+    const named = cleanAlias(body.alias);
+    if (!named.ok) return fail([named.message]);
+    if (body.fxIdrPerUsd !== undefined) { const bad = fxProblem(body.fxIdrPerUsd); if (bad) return fail([bad]); }
+
     let fxIdrPerUsdMicro: number;
     try {
       if (body.fxIdrPerUsd !== undefined) {
@@ -137,7 +152,10 @@ export function makeApp(deps: { jwks?: JWTVerifyGetKey; lcscFetch?: LcscFetcher;
     if (supplierId === null) return c.json({ errors: ['The supplier "LCSC" is missing from the database; the seed data did not apply.'] }, 500);
 
     const plan = await buildPlan(c.env.DB, meter, { supplierId, orderNo }, parsed.lines);
-    const order = { orderNo, orderDate, fxIdrPerUsd: body.fxIdrPerUsd ?? String(fxIdrPerUsdMicro / 1e6), shippingIdr: body.shippingIdr, dutiesIdr: body.dutiesIdr };
+    const known = (await meter.all<{ alias: string | null; orderDate: string }>(
+      c.env.DB.prepare('SELECT alias, order_date AS orderDate FROM orders WHERE supplier_id = ?1 AND order_no = ?2').bind(supplierId, orderNo)))[0];
+    if (known) plan.warnings.push(`This order is already imported as "${orderLabel(known, 1)}"; importing it again adds nothing, and a name is changed from the list of imports below.`);
+    const order = { orderNo, label: known ? orderLabel(known, 1) : (named.alias ?? orderLabel({ alias: null, orderDate }, 1)), alreadyImported: !!known, orderDate, fxIdrPerUsd: body.fxIdrPerUsd ?? String(fxIdrPerUsdMicro / 1e6), shippingIdr: body.shippingIdr, dutiesIdr: body.dutiesIdr };
 
     if (!body.apply) return c.json({ mode: 'plan', order, plan: planView(plan) });
     if (plan.errors.length) return c.json({ errors: plan.errors }, 422);
@@ -145,7 +163,7 @@ export function makeApp(deps: { jwks?: JWTVerifyGetKey; lcscFetch?: LcscFetcher;
     const sha256 = await sha256Hex(body.csv);
     const result = await applyLcscImport(
       c.env.DB, meter,
-      { supplierId, orderNo, orderDate, fxIdrPerUsdMicro, shippingIdr: body.shippingIdr, dutiesIdr: body.dutiesIdr },
+      { supplierId, orderNo, orderDate, fxIdrPerUsdMicro, shippingIdr: body.shippingIdr, dutiesIdr: body.dutiesIdr, alias: named.alias },
       plan, { name: body.filename, sha256 }, new Date().toISOString(),
     );
     return c.json({ mode: 'applied', order, summary: plan.summary, closedNeeds: plan.needsToClose.length, rowsWritten: result.rowsWritten, rowsRead: result.rowsRead });

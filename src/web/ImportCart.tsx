@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { PRIORITIES } from '../domain/purchasing';
-import { api } from './api';
+import { postImport } from './api';
+import { Refusal } from './Refusal';
 import { idr } from './format';
-import { useProjects, useRefreshBuying } from './hooks';
+import { useProjects, useRefreshBuying, useRefreshImports } from './hooks';
 
 interface Line {
   row: number; lcsc: string; mpn: string; manufacturer: string; qty: number; moq: number; unitPriceMicro: number;
@@ -11,7 +12,7 @@ interface Line {
   quote: { action: 'create' | 'update' | 'same' | 'skip'; unitPriceIdr: number; moq: number; reason?: string };
 }
 interface Resp {
-  mode?: 'plan' | 'applied'; project?: { name: string; isNew: boolean }; fxIdrPerUsd?: string; rowsWritten?: number;
+  mode?: 'plan' | 'applied'; alias?: string; project?: { name: string; isNew: boolean }; fxIdrPerUsd?: string; rowsWritten?: number;
   summary?: { total: number; newParts: number; matchedParts: number; needsToCreate: number; needsExisting: number; quotesToWrite: number; lowStock: number };
   warnings?: string[]; errors?: string[]; error?: string; lines?: Line[];
 }
@@ -22,8 +23,9 @@ const QUOTE_LABEL = { create: 'new quote', update: 'price changes', same: 'uncha
 export function ImportCart() {
   const { data: projects = [] } = useProjects();
   const refresh = useRefreshBuying();
+  const refreshImports = useRefreshImports();
   const [file, setFile] = useState<{ name: string; text: string } | null>(null);
-  const [f, setF] = useState({ project: NEW, newName: '', priority: 'medium', fx: '', quotes: true });
+  const [f, setF] = useState({ project: NEW, newName: '', alias: '', priority: 'medium', fx: '', quotes: true });
   const [resp, setResp] = useState<Resp | null>(null);
   const [previewed, setPreviewed] = useState('');
   const [busy, setBusy] = useState(false);
@@ -34,10 +36,12 @@ export function ImportCart() {
     setBusy(true);
     try {
       const body: Record<string, unknown> = { filename: file.name, csv: file.text, priority: f.priority, updateQuotes: f.quotes, apply };
+      if (f.alias.trim()) body.alias = f.alias.trim();
       if (f.project === NEW) body.newProjectName = f.newName.trim(); else body.projectId = Number(f.project);
       if (f.fx) body.fxIdrPerUsd = f.fx;
-      const res = await fetch('/api/import/lcsc-cart', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
-      const json: Resp = await res.json();
+      const res = await postImport<Resp>('/import/lcsc-cart', body);
+      if ('problem' in res) { setResp({ error: res.problem }); return; }
+      const json = res.json;
       setResp((prev) => (json.mode === 'applied' ? { ...json, lines: json.lines ?? prev?.lines } : json));
       if (json.mode === 'plan') {
         // Show the rate the server used, so you correct a number instead of guessing it; the preview stays valid for it.
@@ -45,9 +49,7 @@ export function ImportCart() {
         setF(next);
         setPreviewed(JSON.stringify([file.name, next]));
       }
-      if (json.mode === 'applied') void refresh();
-    } catch {
-      setResp({ error: 'Could not reach the server. This app keeps no data locally, so nothing works offline.' });
+      if (json.mode === 'applied') { void refresh(); void refreshImports(); }
     } finally { setBusy(false); }
   }
 
@@ -66,6 +68,7 @@ export function ImportCart() {
           <select value={f.project} onChange={(e) => setF({ ...f, project: e.target.value })}>
             <option value={NEW}>New project&hellip;</option>{projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label>
         {f.project === NEW && <label>New project name<input value={f.newName} onChange={(e) => setF({ ...f, newName: e.target.value })} placeholder="TPA3255 Amp" /></label>}
+        <label>Name (optional)<input value={f.alias} onChange={(e) => setF({ ...f, alias: e.target.value })} placeholder={resp?.alias ?? 'from the file name'} /></label>
         <label>Priority
           <select value={f.priority} onChange={(e) => setF({ ...f, priority: e.target.value })}>{PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}</select></label>
         <label>USD &rarr; IDR rate (for the quotes)<input inputMode="decimal" value={f.fx} onChange={(e) => setF({ ...f, fx: e.target.value })} placeholder="default from settings" /></label>
@@ -73,8 +76,7 @@ export function ImportCart() {
         <div className="row"><button type="submit" disabled={!file || busy || !nameOk}>Preview</button></div>
       </form>
 
-      {resp?.error && <div className="box bad">{resp.error}</div>}
-      {resp?.errors && <div className="box bad"><b>This cannot be imported:</b><ul>{resp.errors.map((e) => <li key={e}>{e}</li>)}</ul></div>}
+      <Refusal error={resp?.error} errors={resp?.errors} heading={resp?.mode === 'plan' ? 'Fix these first:' : 'This cannot be imported:'} />
       {resp?.warnings && resp.warnings.length > 0 && <div className="box warn"><b>Worth a look:</b><ul>{resp.warnings.map((w) => <li key={w}>{w}</li>)}</ul></div>}
 
       {sum && resp?.lines && (
