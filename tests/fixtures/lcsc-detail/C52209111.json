@@ -1,0 +1,64 @@
+{
+ "fetchedAt": "2026-10-06T06:12:55.537Z",
+ "status": "ok",
+ "productCode": "C52209111",
+ "productModel": "HH 16P TYPE-C (Y495)",
+ "brand": "HH",
+ "catalog": "USB, DVI, HDMI Connector Adapters",
+ "parentCatalog": "Connectors",
+ "catalogPath": [
+  "Connectors, Interconnects",
+  "USB, DVI, HDMI Connectors"
+ ],
+ "package": "SMD",
+ "intro": "USB 2.0 SMD USB, DVI, HDMI Connector Adapters ",
+ "desc": null,
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/26278e0339b3e7ebc7a1bdca93302be4.pdf?productCode=C52209111",
+ "params": [
+  {
+   "name": "Protocol Standard",
+   "value": "USB 2.0",
+   "number": -1
+  },
+  {
+   "name": "Mounting Type",
+   "value": "Surface Mount, Right Angle",
+   "number": -1
+  },
+  {
+   "name": "Connector Type",
+   "value": "Type-C",
+   "number": -1
+  },
+  {
+   "name": "Voltage Rating",
+   "value": "20V",
+   "number": 20
+  },
+  {
+   "name": "Detection color",
+   "value": "Black",
+   "number": -1
+  },
+  {
+   "name": "Supplementary Features",
+   "value": "With Locating Pins",
+   "number": -1
+  },
+  {
+   "name": "Gender",
+   "value": "Female",
+   "number": -1
+  },
+  {
+   "name": "Number of Ports",
+   "value": "1",
+   "number": 1
+  },
+  {
+   "name": "Connect-Disconnect Life",
+   "value": "3,000 Cycles",
+   "number": 0.3
+  }
+ ]
+}

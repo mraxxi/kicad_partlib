@@ -5,6 +5,20 @@ D1 and is not tracked here; this file is about the code and the schema.
 
 ## [Unreleased]
 
+### Spec enrichment: groundwork and proof of concept
+
+Design recorded in `docs/spec-enrichment.md` (read it before touching specs). Nothing user-visible changes except one filter.
+
+- **Needs review (N)** toggle on the Parts toolbar, hidden when nothing is flagged; the dashboard count links to it
+  (`#/parts?review=1`).
+- **`src/domain/quantity.ts`**: parses LCSC-style value strings (`20mOhm@10V`, `4.5V~26V`, `+-100ppm/C`, `9V/us`,
+  `2KB`, `315Wx2@4Ohm;600Wx1@2Ohm`, ...) into SI numbers; the application owns units, not an LLM.
+- **Proof of concept** (`scripts/poc-lcsc/`): LCSC's product-detail endpoint returned labelled parameters for 110 of
+  111 of the owner's parts; the parser agrees with LCSC's own numbers on 393 values with zero inconsistencies.
+  Fixtures in `tests/fixtures/lcsc-detail/`; the owner's cart export added as `tests/fixtures/lcsc/export_cart_*.csv`.
+- Worker egress to LCSC is still unverified (see the doc).
+- 129 tests.
+
 ### Editing a part (fixing a broken import)
 
 The part page could only edit description, category, minimum, notes and the datasheet. Now it also edits **value**

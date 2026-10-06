@@ -1,0 +1,54 @@
+{
+ "fetchedAt": "2026-10-06T06:12:07.710Z",
+ "status": "ok",
+ "productCode": "C2092116",
+ "productModel": "ESR03EZPJ333",
+ "brand": "ROHM",
+ "catalog": "Chip Resistor - Surface Mount",
+ "parentCatalog": "Resistors",
+ "catalogPath": [
+  "Passives",
+  "Resistors"
+ ],
+ "package": "0603",
+ "intro": "250mW 33kΩ 150V Thick Film Resistor ±200ppm/℃ ±5% 0603 Chip Resistor - Surface Mount RoHS",
+ "desc": null,
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/47b0f000b8781f6578038fbca26cc49a.pdf?productCode=C2092116",
+ "params": [
+  {
+   "name": "Power(Watts)",
+   "value": "250mW",
+   "number": 0.25
+  },
+  {
+   "name": "Resistance",
+   "value": "33kΩ",
+   "number": 33000
+  },
+  {
+   "name": "Voltage Rating",
+   "value": "150V",
+   "number": 150
+  },
+  {
+   "name": "Operating Temperature",
+   "value": "-55℃~+155℃",
+   "number": null
+  },
+  {
+   "name": "Type",
+   "value": "Thick Film Resistor",
+   "number": -1
+  },
+  {
+   "name": "Temperature Coefficient",
+   "value": "±200ppm/℃",
+   "number": null
+  },
+  {
+   "name": "Tolerance",
+   "value": "±5%",
+   "number": null
+  }
+ ]
+}

@@ -1,0 +1,39 @@
+{
+ "fetchedAt": "2026-10-06T06:12:21.229Z",
+ "status": "ok",
+ "productCode": "C2982813",
+ "productModel": "AC0603JRNPO0BN221",
+ "brand": "YAGEO",
+ "catalog": "Ceramic Capacitors",
+ "parentCatalog": "Capacitors",
+ "catalogPath": [
+  "Passives",
+  "Capacitors"
+ ],
+ "package": "0603",
+ "intro": "220pF ±5% 100V Ceramic Capacitor NP0 0603",
+ "desc": "220pF ±5% 100V Ceramic Capacitor NP0 0603",
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/e147909414eb3b900a42b90481dc8914.pdf?productCode=C2982813",
+ "params": [
+  {
+   "name": "Capacitance",
+   "value": "220pF",
+   "number": 220
+  },
+  {
+   "name": "Temperature Coefficient",
+   "value": "NP0",
+   "number": -1
+  },
+  {
+   "name": "Tolerance",
+   "value": "±5%",
+   "number": null
+  },
+  {
+   "name": "Voltage Rating",
+   "value": "100V",
+   "number": 100
+  }
+ ]
+}

@@ -1,0 +1,64 @@
+{
+ "fetchedAt": "2026-10-06T06:12:07.109Z",
+ "status": "ok",
+ "productCode": "C2040",
+ "productModel": "RP2040",
+ "brand": "Raspberry Pi",
+ "catalog": "Microcontrollers",
+ "parentCatalog": "Embedded Processors & Controllers",
+ "catalogPath": [
+  "Integrated Circuits (ICs)",
+  "Embedded"
+ ],
+ "package": "LQFN-56(7x7)",
+ "intro": "ARM Cortex-M0+ 32 Bit 133MHz LQFN-56(7x7) Microcontrollers ",
+ "desc": null,
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/3dad1d8f987a4e00bfc677055df1f959.pdf?productCode=C2040",
+ "params": [
+  {
+   "name": "ADC (Bit)",
+   "value": "12bit",
+   "number": 12
+  },
+  {
+   "name": "Number of I/O",
+   "value": "30",
+   "number": 30
+  },
+  {
+   "name": "Operating Temperature",
+   "value": "-20℃~+85℃",
+   "number": null
+  },
+  {
+   "name": "Voltage - Supply",
+   "value": "1.8V~3.3V",
+   "number": null
+  },
+  {
+   "name": "Program Memory Type",
+   "value": "External",
+   "number": -1
+  },
+  {
+   "name": "CPU Core",
+   "value": "ARM Cortex-M0+",
+   "number": -1
+  },
+  {
+   "name": "Core Size",
+   "value": "32 Bit",
+   "number": -1
+  },
+  {
+   "name": "CPU Maximum Speed",
+   "value": "133MHz",
+   "number": 133000000
+  },
+  {
+   "name": "Oscillator Type",
+   "value": "Built-in+External",
+   "number": -1
+  }
+ ]
+}

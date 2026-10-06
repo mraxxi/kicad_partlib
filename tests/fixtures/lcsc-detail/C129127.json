@@ -1,0 +1,64 @@
+{
+ "fetchedAt": "2026-10-06T06:12:03.533Z",
+ "status": "ok",
+ "productCode": "C129127",
+ "productModel": "PMS150C-S08",
+ "brand": "PADAUK",
+ "catalog": "Microcontrollers",
+ "parentCatalog": "Embedded Processors & Controllers",
+ "catalogPath": [
+  "Integrated Circuits (ICs)",
+  "Embedded"
+ ],
+ "package": "SOP-8",
+ "intro": "Others 8 Bit 8MHz SOP-8 Microcontrollers RoHS",
+ "desc": null,
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/a780774d27d02f3dbe4d887395224f33.pdf?productCode=C129127",
+ "params": [
+  {
+   "name": "Number of I/O",
+   "value": "6",
+   "number": 6
+  },
+  {
+   "name": "Operating Temperature",
+   "value": "-20℃~+70℃",
+   "number": null
+  },
+  {
+   "name": "Program Memory Type",
+   "value": "OTP",
+   "number": -1
+  },
+  {
+   "name": "Voltage - Supply",
+   "value": "2V~5.5V",
+   "number": null
+  },
+  {
+   "name": "Program Storage Size",
+   "value": "2KB",
+   "number": 2048
+  },
+  {
+   "name": "CPU Core",
+   "value": "Others",
+   "number": -1
+  },
+  {
+   "name": "Core Size",
+   "value": "8 Bit",
+   "number": -1
+  },
+  {
+   "name": "CPU Maximum Speed",
+   "value": "8MHz",
+   "number": 8000000
+  },
+  {
+   "name": "Oscillator Type",
+   "value": "Built-in",
+   "number": -1
+  }
+ ]
+}

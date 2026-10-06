@@ -82,7 +82,7 @@ export function Parts() {
   const searchBox = useRef<HTMLInputElement>(null);
 
   // ---- filters live in the URL ----
-  const f = { q: params.get('q') ?? '', cat: params.get('cat') ?? '', src: params.get('src') ?? '', cond: params.get('cond') ?? '', loc: params.get('loc') ?? '', st: params.get('st') ?? '' };
+  const f = { q: params.get('q') ?? '', review: params.get('review') === '1', cat: params.get('cat') ?? '', src: params.get('src') ?? '', cond: params.get('cond') ?? '', loc: params.get('loc') ?? '', st: params.get('st') ?? '' };
   const sel = Number(params.get('sel')) || null;
   const queryString = params.toString();
   // Remember the view as it is now (however you arrived at it), for the "back to all parts" link.
@@ -115,11 +115,12 @@ export function Parts() {
     return indexed
       .filter(({ p, blob }) =>
         (!t || blob.includes(t) || p.id === codeId) &&
+        (!f.review || p.needsReview) &&
         (!f.cat || p.category === f.cat) && (!f.src || (p.sources as string[]).includes(f.src)) &&
         (!f.cond || (p.conditions as string[]).includes(f.cond)) && (!f.loc || p.locations.includes(f.loc)) && (!f.st || p.status === f.st))
       .map(({ p }) => p);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [indexed, query, f.cat, f.src, f.cond, f.loc, f.st]);
+  }, [indexed, query, f.review, f.cat, f.src, f.cond, f.loc, f.st]);
 
   const table = useReactTable({
     data: rows, columns,
@@ -200,6 +201,8 @@ export function Parts() {
   }, []);
 
   const active = FILTERS.filter((x) => f[x.key]);
+  // Offered only while something is flagged (or the filter is already on, so it can always be switched off).
+  const reviewCount = useMemo(() => (data ?? []).filter((p) => p.needsReview).length, [data]);
   const options: Record<string, Array<[string, string]>> = {
     cat: cats.map((c) => [c.name, c.name]), src: Object.entries(SOURCE_LABEL), cond: Object.entries(CONDITION_LABEL),
     loc: locs.map((l) => [l.code, l.code]), st: Object.entries(STATUS_LABEL),
@@ -222,6 +225,10 @@ export function Parts() {
           <label key={key} className="mini-label">{label}
             <select value={f[key]} onChange={(e) => setParams({ [key]: e.target.value })}>
               <option value="">All</option>{options[key]!.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>))}
+        {(reviewCount > 0 || f.review) && (
+          <button className={f.review ? 'toggle on' : 'toggle'} aria-pressed={f.review} onClick={() => setParams({ review: f.review ? null : '1' })}>
+            Needs review ({reviewCount})
+          </button>)}
         <div className="chooser-wrap">
           <button className="secondary" onClick={() => setChooser(!chooser)} aria-expanded={chooser}>Columns</button>
           {chooser && (
@@ -241,8 +248,9 @@ export function Parts() {
       </div>
       <div className="statusline">
         <span>{rows.length.toLocaleString('id-ID')} of {(data?.length ?? 0).toLocaleString('id-ID')} parts{isFetching ? ' · refreshing…' : ''}</span>
+        {f.review && <button className="chip removable" onClick={() => setParams({ review: null })}>Needs review ×</button>}
         {active.map((x) => <button key={x.key} className="chip removable" onClick={() => setParams({ [x.key]: null })}>{x.label}: {f[x.key]} ×</button>)}
-        {(active.length > 0 || f.q) && <button className="link" onClick={() => { setQ(''); setParams({ q: null, cat: null, src: null, cond: null, loc: null, st: null }); }}>Clear all</button>}
+        {(active.length > 0 || f.q || f.review) && <button className="link" onClick={() => { setQ(''); setParams({ q: null, review: null, cat: null, src: null, cond: null, loc: null, st: null }); }}>Clear all</button>}
         <button className="link" onClick={() => void refetch()}>Refresh</button>
       </div>
       <div className="split">

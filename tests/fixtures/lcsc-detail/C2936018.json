@@ -1,0 +1,64 @@
+{
+ "fetchedAt": "2026-10-06T06:12:20.620Z",
+ "status": "ok",
+ "productCode": "C2936018",
+ "productModel": "DC-D044A-200",
+ "brand": "DEALON",
+ "catalog": "Power Connectors",
+ "parentCatalog": "Connectors",
+ "catalogPath": [
+  "Connectors, Interconnects",
+  "Barrel Connectors"
+ ],
+ "package": "Through Hole",
+ "intro": "Power Barrel Connector Jack 2mm ID 6mm OD Through Hole, Right Angle",
+ "desc": "Power Barrel Connector Jack 2mm ID 6mm OD Through Hole, Right Angle",
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/cd92c551100b6f68e289aaaa39226592.pdf?productCode=C2936018",
+ "params": [
+  {
+   "name": "Mounting Type",
+   "value": "Right Angle",
+   "number": -1
+  },
+  {
+   "name": "Length",
+   "value": "11.6mm",
+   "number": 11.6
+  },
+  {
+   "name": "Connector Type",
+   "value": "DC Power Jack",
+   "number": -1
+  },
+  {
+   "name": "Width",
+   "value": "10.1mm",
+   "number": 10.1
+  },
+  {
+   "name": "Operating Temperature",
+   "value": "-20℃~+70℃",
+   "number": null
+  },
+  {
+   "name": "Inside Contact Diameter",
+   "value": "2mm",
+   "number": 2
+  },
+  {
+   "name": "Outside Contact Diameter",
+   "value": "6mm",
+   "number": 6
+  },
+  {
+   "name": "Current Rating",
+   "value": "500mA",
+   "number": 0.5
+  },
+  {
+   "name": "Voltage Rating (Max)",
+   "value": "30V",
+   "number": 30
+  }
+ ]
+}

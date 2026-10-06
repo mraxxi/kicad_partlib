@@ -1,0 +1,54 @@
+{
+ "fetchedAt": "2026-10-06T06:12:17.113Z",
+ "status": "ok",
+ "productCode": "C2930027",
+ "productModel": "FRC0603J103 TS",
+ "brand": "FOJAN",
+ "catalog": "Chip Resistor - Surface Mount",
+ "parentCatalog": "Resistors",
+ "catalogPath": [
+  "Passives",
+  "Resistors"
+ ],
+ "package": "0603",
+ "intro": "10kΩ ±5% 100mW 0603 Thick Film Resistor",
+ "desc": "10kΩ ±5% 100mW 0603 Thick Film Resistor",
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/106fb934f95f063b695dad1b31b1eab8.pdf?productCode=C2930027",
+ "params": [
+  {
+   "name": "Resistance",
+   "value": "10kΩ",
+   "number": 10000
+  },
+  {
+   "name": "Power(Watts)",
+   "value": "100mW",
+   "number": 0.1
+  },
+  {
+   "name": "Voltage Rating",
+   "value": "75V",
+   "number": 75
+  },
+  {
+   "name": "Operating Temperature",
+   "value": "-55℃~+155℃",
+   "number": null
+  },
+  {
+   "name": "Type",
+   "value": "Thick Film Resistor",
+   "number": -1
+  },
+  {
+   "name": "Temperature Coefficient",
+   "value": "±100ppm/℃",
+   "number": null
+  },
+  {
+   "name": "Tolerance",
+   "value": "±5%",
+   "number": null
+  }
+ ]
+}

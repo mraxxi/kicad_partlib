@@ -1,0 +1,90 @@
+{
+ "fetchedAt": "2026-10-06T06:12:31.145Z",
+ "status": "ok",
+ "productCode": "C3041292",
+ "productModel": "2N7002KDW",
+ "brand": "Slkor",
+ "catalog": "Single FETs, MOSFETs",
+ "parentCatalog": "Transistors/Thyristors",
+ "catalogPath": [
+  "Discrete Semiconductors",
+  "Transistors",
+  "FETs, MOSFETs"
+ ],
+ "package": "SOT-363-6",
+ "intro": "N-Channel Array 60V 340mA 150mW Surface Mount SOT-363-6",
+ "desc": "N-Channel Array 60V 340mA 150mW Surface Mount SOT-363-6",
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/fa5cfd610248dbd304083ec617efddc3.pdf?productCode=C3041292",
+ "params": [
+  {
+   "name": "Output Capacitance(Coss)",
+   "value": "30pF",
+   "number": 30
+  },
+  {
+   "name": "Ciss-Input Capacitance",
+   "value": "40pF",
+   "number": 40
+  },
+  {
+   "name": "Pd - Power Dissipation",
+   "value": "150mW",
+   "number": 0.15
+  },
+  {
+   "name": "Configuration",
+   "value": "-",
+   "number": -1
+  },
+  {
+   "name": "Operating Temperature",
+   "value": "-55℃~+150℃",
+   "number": null
+  },
+  {
+   "name": "Drain to Source Voltage",
+   "value": "60V",
+   "number": 60
+  },
+  {
+   "name": "Current - Continuous Drain(Id)",
+   "value": "340mA",
+   "number": 0.34
+  },
+  {
+   "name": "Reverse Transfer Capacitance (Crss)",
+   "value": "10pF",
+   "number": 10
+  },
+  {
+   "name": "RDS(on)",
+   "value": "5.3Ω@10V",
+   "number": 5.3
+  },
+  {
+   "name": "Number",
+   "value": "2 N-Channel",
+   "number": -1
+  },
+  {
+   "name": "Gate Charge(Qg)",
+   "value": "30nC",
+   "number": 3e-8
+  },
+  {
+   "name": "Vgs",
+   "value": "±20V",
+   "number": null
+  },
+  {
+   "name": "Gate Threshold Voltage (Vgs(th))",
+   "value": "2.5V",
+   "number": 2.5
+  },
+  {
+   "name": "Type",
+   "value": "N-Channel",
+   "number": -1
+  }
+ ]
+}

@@ -1,0 +1,39 @@
+{
+ "fetchedAt": "2026-10-06T06:12:16.010Z",
+ "status": "ok",
+ "productCode": "C2928852",
+ "productModel": "MPB105J2T1001",
+ "brand": "KYET",
+ "catalog": "Film Capacitors",
+ "parentCatalog": "Capacitors",
+ "catalogPath": [
+  "Passives",
+  "Capacitors"
+ ],
+ "package": "Through Hole,P=10mm",
+ "intro": "1uF Film Capacitor ±5% 550V Through Hole P=10mm",
+ "desc": "1uF Film Capacitor ±5% 550V Through Hole P=10mm",
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/da1ea8eaacd1bbe3fffbaa02b2069224.pdf?productCode=C2928852",
+ "params": [
+  {
+   "name": "Capacitance",
+   "value": "1uF",
+   "number": 1000000
+  },
+  {
+   "name": "Voltage Rating",
+   "value": "550V",
+   "number": 550
+  },
+  {
+   "name": "Operating Temperature",
+   "value": "-40℃~+100℃",
+   "number": null
+  },
+  {
+   "name": "Tolerance",
+   "value": "±5%",
+   "number": null
+  }
+ ]
+}

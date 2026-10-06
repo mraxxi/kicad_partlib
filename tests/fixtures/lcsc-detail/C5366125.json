@@ -1,0 +1,64 @@
+{
+ "fetchedAt": "2026-10-06T06:12:57.876Z",
+ "status": "ok",
+ "productCode": "C5366125",
+ "productModel": "78M12",
+ "brand": "Minos",
+ "catalog": "Voltage Regulators - Linear, Low Drop Out (LDO) Regulators",
+ "parentCatalog": "Power Management (PMIC)",
+ "catalogPath": [
+  "Integrated Circuits (ICs)",
+  "Power Management (PMIC)"
+ ],
+ "package": "TO-252",
+ "intro": "Linear Voltage Regulator IC Positive Fixed 1 Output 1.2A TO-252",
+ "desc": "Linear Voltage Regulator IC Positive Fixed 1 Output 1.2A TO-252",
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/8f28e6323afd74886e2857facc4c05d7.pdf?productCode=C5366125",
+ "params": [
+  {
+   "name": "Output Voltage",
+   "value": "12V",
+   "number": null
+  },
+  {
+   "name": "Number of Outputs",
+   "value": "1",
+   "number": 1
+  },
+  {
+   "name": "Operating Temperature",
+   "value": "0℃~+125℃@(Tj)",
+   "number": null
+  },
+  {
+   "name": "Supply Current (Iq)",
+   "value": "5.1mA",
+   "number": 0.0051
+  },
+  {
+   "name": "Output Configuration",
+   "value": "Positive",
+   "number": -1
+  },
+  {
+   "name": "Operating Voltage",
+   "value": "27V",
+   "number": null
+  },
+  {
+   "name": "Output Current",
+   "value": "1.2A",
+   "number": 1.2
+  },
+  {
+   "name": "Features",
+   "value": "Over Current Protection;Thermal shutdown;Short Circuit Protection",
+   "number": null
+  },
+  {
+   "name": "Output Type",
+   "value": "Fixed",
+   "number": -1
+  }
+ ]
+}

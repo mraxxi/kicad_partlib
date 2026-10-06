@@ -104,3 +104,7 @@ table.vt tbody tr.sel td { background: color-mix(in srgb, var(--accent) 16%, var
 label.check { flex-direction:row; align-items:center; gap:8px; color:var(--fg); }
 details.identity { border:1px solid var(--line); border-radius:8px; padding:8px 12px; }
 details.identity summary { cursor:pointer; font-weight:600; }
+
+/* toolbar toggle (e.g. Needs review) */
+button.toggle { background:transparent; color:var(--warn); border:1px solid var(--warn); }
+button.toggle.on { background:var(--warn); color:var(--bg); }

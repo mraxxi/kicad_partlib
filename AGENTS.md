@@ -261,3 +261,4 @@ columns itself on upload (CSV/XLS/XLSX, <= 4 MB, <= 800 lines, needs Quantity pl
 | 3 Purchasing | **done**: projects, needs, quotes (one per part+supplier, price breaks, MOQ), stock allocation across needs, landed-cost ranking, buy list with override, recap with order shipping once per supplier, spend by project/priority, price matrix, plan-then-apply "mark ordered" that freezes cost, LCSC import that closes ordered needs, LCSC cart CSV. The sheet's sample rows reproduce to the rupiah (`tests/purchasing.test.ts`). Migrations `0004` and `0005` are applied **locally only** |
 | 4 KiCad link (BOM import, library index) | see `docs/deferred/bom-reconciliation.md` |
 | 5 Labels/QR, FX cron, weekly backup Action, Sheet migration | - |
+| Spec enrichment (Value, Key specs, sort chains) | design in `docs/spec-enrichment.md`; phases 0-2 done (needs-review filter, LCSC proof of concept, quantity parser); next is spec storage, passives from descriptions, then the table UI |

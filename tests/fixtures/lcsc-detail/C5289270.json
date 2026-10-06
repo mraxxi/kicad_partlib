@@ -1,0 +1,49 @@
+{
+ "fetchedAt": "2026-10-06T06:12:57.294Z",
+ "status": "ok",
+ "productCode": "C5289270",
+ "productModel": "XRNR252012-1.0uH/N",
+ "brand": "XR",
+ "catalog": "Fixed Inductors",
+ "parentCatalog": "Inductors, Coils, Chokes",
+ "catalogPath": [
+  "Passives",
+  "Inductors, Coils, Chokes"
+ ],
+ "package": "1008",
+ "intro": "1.93A 1uH ±30% 90mΩ 2.59A Magnetic Shielded Inductor 1008 Fixed Inductors ",
+ "desc": null,
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/ee442a25cf28277e11d5ede1917201f7.pdf?productCode=C5289270",
+ "params": [
+  {
+   "name": "Current Rating",
+   "value": "1.93A",
+   "number": 1.93
+  },
+  {
+   "name": "Inductance",
+   "value": "1uH",
+   "number": 1
+  },
+  {
+   "name": "Tolerance",
+   "value": "±30%",
+   "number": null
+  },
+  {
+   "name": "DC Resistance(DCR)",
+   "value": "90mΩ",
+   "number": 0.09
+  },
+  {
+   "name": "Current - Saturation(Isat)",
+   "value": "2.59A",
+   "number": 2.59
+  },
+  {
+   "name": "Type",
+   "value": "Magnetic Shielded Inductor",
+   "number": -1
+  }
+ ]
+}

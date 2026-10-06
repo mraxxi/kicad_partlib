@@ -1,0 +1,64 @@
+{
+ "fetchedAt": "2026-10-06T06:12:43.794Z",
+ "status": "ok",
+ "productCode": "C387705",
+ "productModel": "LP3993-33B3F",
+ "brand": "LOWPOWER",
+ "catalog": "Voltage Regulators - Linear, Low Drop Out (LDO) Regulators",
+ "parentCatalog": "Power Management (PMIC)",
+ "catalogPath": [
+  "Integrated Circuits (ICs)",
+  "Power Management (PMIC)"
+ ],
+ "package": "SOT-23",
+ "intro": "Linear Voltage Regulator IC Positive Fixed 1 Output 200mA SOT-23",
+ "desc": "Linear Voltage Regulator IC Positive Fixed 1 Output 200mA SOT-23",
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/debb8583d46ad8df2893edb39b7a8a69.pdf?productCode=C387705",
+ "params": [
+  {
+   "name": "Output Voltage",
+   "value": "3.3V",
+   "number": null
+  },
+  {
+   "name": "Number of Outputs",
+   "value": "1",
+   "number": 1
+  },
+  {
+   "name": "Operating Temperature",
+   "value": "-40℃~+85℃@(Tj)",
+   "number": null
+  },
+  {
+   "name": "Supply Current (Iq)",
+   "value": "5uA",
+   "number": 0.000005
+  },
+  {
+   "name": "Output Configuration",
+   "value": "Positive",
+   "number": -1
+  },
+  {
+   "name": "Output Current",
+   "value": "200mA",
+   "number": 0.2
+  },
+  {
+   "name": "Operating Voltage",
+   "value": "24V",
+   "number": null
+  },
+  {
+   "name": "Features",
+   "value": "Over Current Protection;Thermal shutdown",
+   "number": null
+  },
+  {
+   "name": "Output Type",
+   "value": "Fixed",
+   "number": -1
+  }
+ ]
+}

@@ -1,0 +1,49 @@
+{
+ "fetchedAt": "2026-10-06T06:12:50.817Z",
+ "status": "ok",
+ "productCode": "C48945800",
+ "productModel": "ZEPIM322512S-100M",
+ "brand": "ZE",
+ "catalog": "Fixed Inductors",
+ "parentCatalog": "Inductors, Coils, Chokes",
+ "catalogPath": [
+  "Passives",
+  "Inductors, Coils, Chokes"
+ ],
+ "package": "1210",
+ "intro": "2.4A 10uH ±20% 330mΩ 2.5A Molded inductor 1210 Fixed Inductors RoHS",
+ "desc": null,
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/01c64f6f134522f6fe9155cd4021cb1f.pdf?productCode=C48945800",
+ "params": [
+  {
+   "name": "Current Rating",
+   "value": "2.4A",
+   "number": 2.4
+  },
+  {
+   "name": "Inductance",
+   "value": "10uH",
+   "number": 10
+  },
+  {
+   "name": "Tolerance",
+   "value": "±20%",
+   "number": null
+  },
+  {
+   "name": "DC Resistance(DCR)",
+   "value": "330mΩ",
+   "number": 0.33
+  },
+  {
+   "name": "Current - Saturation(Isat)",
+   "value": "2.5A",
+   "number": 2.5
+  },
+  {
+   "name": "Type",
+   "value": "Molded inductor",
+   "number": -1
+  }
+ ]
+}

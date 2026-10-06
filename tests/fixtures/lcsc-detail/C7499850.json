@@ -1,0 +1,70 @@
+{
+ "fetchedAt": "2026-10-06T06:13:03.757Z",
+ "status": "ok",
+ "productCode": "C7499850",
+ "productModel": "20P02D",
+ "brand": "HL",
+ "catalog": "Single FETs, MOSFETs",
+ "parentCatalog": "Transistors/Thyristors",
+ "catalogPath": [
+  "Discrete Semiconductors",
+  "Transistors",
+  "FETs, MOSFETs"
+ ],
+ "package": "PDFN-8(3x3)",
+ "intro": "P-Channel 20V 20A 5W Surface Mount PDFN-8(3x3)",
+ "desc": "P-Channel 20V 20A 5W Surface Mount PDFN-8(3x3)",
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/1d86d9a510c8fdc513def105bd5c8880.pdf?productCode=C7499850",
+ "params": [
+  {
+   "name": "Operating Temperature",
+   "value": "-55℃~+150℃",
+   "number": null
+  },
+  {
+   "name": "Drain to Source Voltage",
+   "value": "20V",
+   "number": 20
+  },
+  {
+   "name": "Current - Continuous Drain(Id)",
+   "value": "20A",
+   "number": 20
+  },
+  {
+   "name": "Ciss-Input Capacitance",
+   "value": "2nF",
+   "number": 2000
+  },
+  {
+   "name": "Pd - Power Dissipation",
+   "value": "5W",
+   "number": 5
+  },
+  {
+   "name": "Reverse Transfer Capacitance (Crss)",
+   "value": "231pF",
+   "number": 231
+  },
+  {
+   "name": "RDS(on)",
+   "value": "15mΩ",
+   "number": 0.015
+  },
+  {
+   "name": "Number",
+   "value": "1 P-Channel",
+   "number": -1
+  },
+  {
+   "name": "Gate Charge(Qg)",
+   "value": "15.3nC",
+   "number": 1.53e-8
+  },
+  {
+   "name": "Gate Threshold Voltage (Vgs(th))",
+   "value": "700mV",
+   "number": 0.7
+  }
+ ]
+}

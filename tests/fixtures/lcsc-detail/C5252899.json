@@ -1,0 +1,64 @@
+{
+ "fetchedAt": "2026-10-06T06:12:56.706Z",
+ "status": "ok",
+ "productCode": "C5252899",
+ "productModel": "XC6206P332MR-MS",
+ "brand": "MSKSEMI",
+ "catalog": "Voltage Regulators - Linear, Low Drop Out (LDO) Regulators",
+ "parentCatalog": "Power Management (PMIC)",
+ "catalogPath": [
+  "Integrated Circuits (ICs)",
+  "Power Management (PMIC)"
+ ],
+ "package": "SOT-23",
+ "intro": "3.3V Positive Fixed SOT-23 Voltage Regulators - Linear, Low Drop Out (LDO) Regulators ",
+ "desc": null,
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/53aa68e77044587b638b16f2ce44f3c8.pdf?productCode=C5252899",
+ "params": [
+  {
+   "name": "Output Voltage",
+   "value": "3.3V",
+   "number": null
+  },
+  {
+   "name": "Number of Outputs",
+   "value": "1",
+   "number": 1
+  },
+  {
+   "name": "Operating Temperature",
+   "value": "-20℃~+85℃",
+   "number": null
+  },
+  {
+   "name": "Supply Current (Iq)",
+   "value": "3uA",
+   "number": 0.000003
+  },
+  {
+   "name": "Output Configuration",
+   "value": "Positive",
+   "number": -1
+  },
+  {
+   "name": "Operating Voltage",
+   "value": "6.5V",
+   "number": null
+  },
+  {
+   "name": "Output Current",
+   "value": "250mA",
+   "number": 0.25
+  },
+  {
+   "name": "Features",
+   "value": "Short Circuit Protection;Over Current Protection",
+   "number": null
+  },
+  {
+   "name": "Output Type",
+   "value": "Fixed",
+   "number": -1
+  }
+ ]
+}

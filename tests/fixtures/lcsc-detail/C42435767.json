@@ -1,0 +1,79 @@
+{
+ "fetchedAt": "2026-10-06T06:12:47.871Z",
+ "status": "ok",
+ "productCode": "C42435767",
+ "productModel": "AT25Q32BDQ/TR",
+ "brand": "HGSEMI",
+ "catalog": "Memory",
+ "parentCatalog": "Memory",
+ "catalogPath": [
+  "Integrated Circuits (ICs)",
+  "Memory"
+ ],
+ "package": "DFN-8(3x3)",
+ "intro": "32Mbit 2.3V~3.6V 133MHz SPI DFN-8(3x3) Memory ",
+ "desc": null,
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/703aa809b9bea87e6c6453f016ac9ddd.pdf?productCode=C42435767",
+ "params": [
+  {
+   "name": "Operating Temperature",
+   "value": "-40℃~+125℃",
+   "number": null
+  },
+  {
+   "name": "Features",
+   "value": "-",
+   "number": -1
+  },
+  {
+   "name": "Memory Size",
+   "value": "32Mbit",
+   "number": 33554432
+  },
+  {
+   "name": "Voltage - Supply",
+   "value": "2.3V~3.6V",
+   "number": null
+  },
+  {
+   "name": "Program / Erase Cycles",
+   "value": "100,000 cycles",
+   "number": 10
+  },
+  {
+   "name": "Clock Frequency",
+   "value": "133MHz",
+   "number": 133000000
+  },
+  {
+   "name": "Data Retention - TDR (Year)",
+   "value": "20 Years",
+   "number": 20
+  },
+  {
+   "name": "Block Erase Time(tBE)",
+   "value": "250ms",
+   "number": 0.25
+  },
+  {
+   "name": "Write Cycle Time(tWC)",
+   "value": "-",
+   "number": null
+  },
+  {
+   "name": "Page Programming Time (Tpp)",
+   "value": "500us",
+   "number": 0.0005
+  },
+  {
+   "name": "Interface",
+   "value": "SPI",
+   "number": -1
+  },
+  {
+   "name": "Standby Supply Current",
+   "value": "1uA",
+   "number": 0.000001
+  }
+ ]
+}

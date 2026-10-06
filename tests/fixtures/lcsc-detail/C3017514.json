@@ -1,0 +1,54 @@
+{
+ "fetchedAt": "2026-10-06T06:12:28.214Z",
+ "status": "ok",
+ "productCode": "C3017514",
+ "productModel": "SCR0402J100K",
+ "brand": "VO",
+ "catalog": "Chip Resistor - Surface Mount",
+ "parentCatalog": "Resistors",
+ "catalogPath": [
+  "Passives",
+  "Resistors"
+ ],
+ "package": "0402",
+ "intro": "62.5mW 100kΩ 50V Thick Film Resistor ±200ppm/℃ ±5% 0402 Chip Resistor - Surface Mount ",
+ "desc": null,
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/dfc341bc55ccd2ccb4cdebe7ede649f5.pdf?productCode=C3017514",
+ "params": [
+  {
+   "name": "Power(Watts)",
+   "value": "62.5mW",
+   "number": 0.0625
+  },
+  {
+   "name": "Resistance",
+   "value": "100kΩ",
+   "number": 100000
+  },
+  {
+   "name": "Voltage Rating",
+   "value": "50V",
+   "number": 50
+  },
+  {
+   "name": "Operating Temperature",
+   "value": "-55℃~+155℃",
+   "number": null
+  },
+  {
+   "name": "Type",
+   "value": "Thick Film Resistor",
+   "number": -1
+  },
+  {
+   "name": "Temperature Coefficient",
+   "value": "±200ppm/℃",
+   "number": null
+  },
+  {
+   "name": "Tolerance",
+   "value": "±5%",
+   "number": null
+  }
+ ]
+}

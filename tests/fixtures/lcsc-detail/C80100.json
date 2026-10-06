@@ -1,0 +1,80 @@
+{
+ "fetchedAt": "2026-10-06T06:13:06.117Z",
+ "status": "ok",
+ "productCode": "C80100",
+ "productModel": "RC4580IDR",
+ "brand": "TI",
+ "catalog": "Instrumentation, Op Amps, Buffer Amps",
+ "parentCatalog": "Amplifiers/Comparators",
+ "catalogPath": [
+  "Integrated Circuits (ICs)",
+  "Linear",
+  "Amplifiers"
+ ],
+ "package": "SOIC-8",
+ "intro": "9mA 2-Channel SOIC-8 Instrumentation, Op Amps, Buffer Amps RoHS",
+ "desc": null,
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/b43a8622fe323fd05fac04736c91f784.pdf?productCode=C80100",
+ "params": [
+  {
+   "name": "Quiescent Current",
+   "value": "9mA",
+   "number": 0.009
+  },
+  {
+   "name": "Total Harmonic Distortion + Noise (THD+N)",
+   "value": "0.0005%",
+   "number": 0.0005
+  },
+  {
+   "name": "Features",
+   "value": "-",
+   "number": -1
+  },
+  {
+   "name": "Number of Inputs",
+   "value": "-",
+   "number": -1
+  },
+  {
+   "name": "Signal-to-Noise Ratio",
+   "value": "-",
+   "number": null
+  },
+  {
+   "name": "Speaker Channels",
+   "value": "2-Channel",
+   "number": -1
+  },
+  {
+   "name": "Efficiency",
+   "value": "-",
+   "number": null
+  },
+  {
+   "name": "Output Power",
+   "value": "-",
+   "number": -1
+  },
+  {
+   "name": "Operating Temperature",
+   "value": "-40℃~+85℃",
+   "number": null
+  },
+  {
+   "name": "Voltage - Supply",
+   "value": "-16V~-2V;2V~16V",
+   "number": null
+  },
+  {
+   "name": "Class",
+   "value": "-",
+   "number": -1
+  },
+  {
+   "name": "Power Supply Rejection Ratio (PSRR)",
+   "value": "110dB",
+   "number": 110
+  }
+ ]
+}

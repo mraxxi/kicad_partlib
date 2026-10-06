@@ -1,0 +1,100 @@
+{
+ "fetchedAt": "2026-10-06T06:12:06.518Z",
+ "status": "ok",
+ "productCode": "C192421",
+ "productModel": "OPA1678IDR",
+ "brand": "TI",
+ "catalog": "Instrumentation, Op Amps, Buffer Amps",
+ "parentCatalog": "Amplifiers/Comparators",
+ "catalogPath": [
+  "Integrated Circuits (ICs)",
+  "Linear",
+  "Amplifiers"
+ ],
+ "package": "SOIC-8-150mil",
+ "intro": "50mA 2 500uV 9V/us 10pA 110dB 16MHz 2mA Rail-to-rail output SOIC-8-150mil Instrumentation, Op Amps, Buffer Amps RoHS",
+ "desc": null,
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/ad5892476247963c6a215ccf8f2eb7b8.pdf?productCode=C192421",
+ "params": [
+  {
+   "name": "Output Current",
+   "value": "50mA",
+   "number": 0.05
+  },
+  {
+   "name": "Number of Channels",
+   "value": "2",
+   "number": -1
+  },
+  {
+   "name": "Vos - Input Offset Voltage",
+   "value": "500uV",
+   "number": 0.0005
+  },
+  {
+   "name": "Slew Rate",
+   "value": "9V/us",
+   "number": 9
+  },
+  {
+   "name": "Input Offset Current(Ios)",
+   "value": "10pA",
+   "number": 1e-11
+  },
+  {
+   "name": "Operating Temperature",
+   "value": "-40℃~+85℃",
+   "number": null
+  },
+  {
+   "name": "Ib - Input Bias Current",
+   "value": "10pA",
+   "number": 1e-11
+  },
+  {
+   "name": "Common Mode Rejection Ratio(CMRR)",
+   "value": "110dB",
+   "number": 110
+  },
+  {
+   "name": "Input Offset Voltage Drift(Vos TC)",
+   "value": "2uV/℃",
+   "number": null
+  },
+  {
+   "name": "Gain Bandwidth Product",
+   "value": "16MHz",
+   "number": 16000000
+  },
+  {
+   "name": "Quiescent Current",
+   "value": "2mA",
+   "number": 0.002
+  },
+  {
+   "name": "Features",
+   "value": "Built-in compensation;ESD protection",
+   "number": null
+  },
+  {
+   "name": "Input Voltage Noise Density",
+   "value": "4.5nV/√Hz@1kHz",
+   "number": 4.5
+  },
+  {
+   "name": "Rail to Rail",
+   "value": "Rail-to-rail output",
+   "number": -1
+  },
+  {
+   "name": "Dual Supply",
+   "value": "-18V~-2.25V;2.25V~18V",
+   "number": null
+  },
+  {
+   "name": "Single Supply",
+   "value": "4.5V~36V",
+   "number": null
+  }
+ ]
+}

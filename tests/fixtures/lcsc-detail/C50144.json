@@ -1,0 +1,80 @@
+{
+ "fetchedAt": "2026-10-06T06:12:53.163Z",
+ "status": "ok",
+ "productCode": "C50144",
+ "productModel": "TPA3116D2DADR",
+ "brand": "TI",
+ "catalog": "Audio Amplifiers",
+ "parentCatalog": "Amplifiers/Comparators",
+ "catalogPath": [
+  "Integrated Circuits (ICs)",
+  "Linear",
+  "Amplifiers"
+ ],
+ "package": "HTSSOP-32-6.1mm",
+ "intro": "20mA 4.5V~26V 2-Channel 50Wx2@4Ω Class D HTSSOP-32-6.1mm Audio Amplifiers RoHS",
+ "desc": null,
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/37d45e359bf24121b574e91fab21074d.pdf?productCode=C50144",
+ "params": [
+  {
+   "name": "Quiescent Current",
+   "value": "20mA",
+   "number": 0.02
+  },
+  {
+   "name": "Voltage - Supply",
+   "value": "4.5V~26V",
+   "number": null
+  },
+  {
+   "name": "Features",
+   "value": "Filterless architecture;Overvoltage protection;Integrated PLL",
+   "number": null
+  },
+  {
+   "name": "Total Harmonic Distortion + Noise (THD+N)",
+   "value": "0.1%",
+   "number": 0.1
+  },
+  {
+   "name": "Operating Temperature",
+   "value": "-40℃~+85℃",
+   "number": null
+  },
+  {
+   "name": "Signal-to-Noise Ratio",
+   "value": "102dB",
+   "number": 102
+  },
+  {
+   "name": "Number of Inputs",
+   "value": "2 Pairs Differential Inputs",
+   "number": -1
+  },
+  {
+   "name": "Speaker Channels",
+   "value": "2-Channel",
+   "number": -1
+  },
+  {
+   "name": "Efficiency",
+   "value": "90%",
+   "number": 90
+  },
+  {
+   "name": "Output Power",
+   "value": "50Wx2@4Ω",
+   "number": -1
+  },
+  {
+   "name": "Class",
+   "value": "Class D",
+   "number": -1
+  },
+  {
+   "name": "Power Supply Rejection Ratio (PSRR)",
+   "value": "-70dB",
+   "number": -70
+  }
+ ]
+}

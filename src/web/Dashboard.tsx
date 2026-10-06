@@ -30,7 +30,7 @@ export function Dashboard() {
         <div><b>{d.reorderCount}</b><span>below minimum</span></div>
         <div><b>{d.outCount}</b><span>out of stock</span></div>
         <div><b>{num(d.untestedSalvageUnits)}</b><span>untested salvaged units</span></div>
-        <div><b>{d.needsReviewCount}</b><span>parts to review</span></div>
+        <div><b>{d.needsReviewCount > 0 ? <a href="#/parts?review=1">{d.needsReviewCount}</a> : d.needsReviewCount}</b><span>parts to review</span></div>
       </div>
       <div className="two">
         <section>

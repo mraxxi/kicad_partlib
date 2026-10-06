@@ -1,0 +1,80 @@
+{
+ "fetchedAt": "2026-10-06T06:12:49.639Z",
+ "status": "ok",
+ "productCode": "C468240",
+ "productModel": "TPA3255DDVR",
+ "brand": "TI",
+ "catalog": "Audio Amplifiers",
+ "parentCatalog": "Amplifiers/Comparators",
+ "catalogPath": [
+  "Integrated Circuits (ICs)",
+  "Linear",
+  "Amplifiers"
+ ],
+ "package": "HTSSOP-44-6.1mm",
+ "intro": "30mA 18V~53.5V Class D HTSSOP-44-6.1mm Audio Amplifiers RoHS",
+ "desc": null,
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/8cddf1c41cf8337911bf8d8389cb01e0.pdf?productCode=C468240",
+ "params": [
+  {
+   "name": "Quiescent Current",
+   "value": "30mA",
+   "number": 0.03
+  },
+  {
+   "name": "Voltage - Supply",
+   "value": "18V~53.5V",
+   "number": null
+  },
+  {
+   "name": "Features",
+   "value": "Automatic mute/no-noise switch;Overvoltage protection",
+   "number": null
+  },
+  {
+   "name": "Total Harmonic Distortion + Noise (THD+N)",
+   "value": "0.006%",
+   "number": 0.006
+  },
+  {
+   "name": "Operating Temperature",
+   "value": "0℃~+125℃",
+   "number": null
+  },
+  {
+   "name": "Number of Inputs",
+   "value": "-",
+   "number": -1
+  },
+  {
+   "name": "Signal-to-Noise Ratio",
+   "value": "112dB",
+   "number": 112
+  },
+  {
+   "name": "Speaker Channels",
+   "value": "2-Channel;1-Channel",
+   "number": null
+  },
+  {
+   "name": "Efficiency",
+   "value": "90%",
+   "number": 90
+  },
+  {
+   "name": "Output Power",
+   "value": "315W×2@4Ω;600W×1@2Ω",
+   "number": null
+  },
+  {
+   "name": "Class",
+   "value": "Class D",
+   "number": -1
+  },
+  {
+   "name": "Power Supply Rejection Ratio (PSRR)",
+   "value": "65dB",
+   "number": 65
+  }
+ ]
+}

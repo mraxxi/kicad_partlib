@@ -1,0 +1,44 @@
+{
+ "fetchedAt": "2026-10-06T06:12:15.422Z",
+ "status": "ok",
+ "productCode": "C2921388",
+ "productModel": "IP2188_D_NP",
+ "brand": "INJOINIC",
+ "catalog": "Power Management - Specialized",
+ "parentCatalog": "Power Management (PMIC)",
+ "catalogPath": [
+  "Integrated Circuits (ICs)",
+  "Power Management (PMIC)"
+ ],
+ "package": "SSOP-10-150mil",
+ "intro": "SSOP-10-150mil Power Management - Specialized ",
+ "desc": null,
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/114941ec0626dc867af5b8334ccb51b8.pdf?productCode=C2921388",
+ "params": [
+  {
+   "name": "Features",
+   "value": "-",
+   "number": -1
+  },
+  {
+   "name": "Operating Temperature",
+   "value": "-40℃~+85℃",
+   "number": null
+  },
+  {
+   "name": "Interface",
+   "value": "-",
+   "number": -1
+  },
+  {
+   "name": "Output Voltage",
+   "value": "5V;9V;12V;3V~12V",
+   "number": null
+  },
+  {
+   "name": "Voltage - Supply",
+   "value": "3V~25V",
+   "number": null
+  }
+ ]
+}

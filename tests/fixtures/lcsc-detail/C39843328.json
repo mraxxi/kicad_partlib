@@ -1,0 +1,64 @@
+{
+ "fetchedAt": "2026-10-06T06:12:44.375Z",
+ "status": "ok",
+ "productCode": "C39843328",
+ "productModel": "RP2354B",
+ "brand": "Raspberry Pi",
+ "catalog": "Microcontrollers",
+ "parentCatalog": "Embedded Processors & Controllers",
+ "catalogPath": [
+  "Integrated Circuits (ICs)",
+  "Embedded"
+ ],
+ "package": "QFN-80-EP(10x10)",
+ "intro": "ARM Cortex-M33 32 Bit 150MHz QFN-80-EP(10x10) Microcontrollers ",
+ "desc": null,
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/c13e6657e7f2e877b2e431a557e4b6e4.pdf?productCode=C39843328",
+ "params": [
+  {
+   "name": "ADC (Bit)",
+   "value": "12bit",
+   "number": 12
+  },
+  {
+   "name": "Number of I/O",
+   "value": "48",
+   "number": 48
+  },
+  {
+   "name": "Operating Temperature",
+   "value": "-20℃~+85℃",
+   "number": null
+  },
+  {
+   "name": "Program Memory Type",
+   "value": "OTP",
+   "number": -1
+  },
+  {
+   "name": "CPU Core",
+   "value": "ARM Cortex-M33",
+   "number": -1
+  },
+  {
+   "name": "Program Storage Size",
+   "value": "2MB",
+   "number": 2097152
+  },
+  {
+   "name": "Core Size",
+   "value": "32 Bit",
+   "number": -1
+  },
+  {
+   "name": "CPU Maximum Speed",
+   "value": "150MHz",
+   "number": 150000000
+  },
+  {
+   "name": "Oscillator Type",
+   "value": "Built-in+External",
+   "number": -1
+  }
+ ]
+}

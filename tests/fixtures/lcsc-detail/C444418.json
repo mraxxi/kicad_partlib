@@ -1,0 +1,80 @@
+{
+ "fetchedAt": "2026-10-06T06:12:49.054Z",
+ "status": "ok",
+ "productCode": "C444418",
+ "productModel": "PAM8013AKR",
+ "brand": "DIODES",
+ "catalog": "Audio Amplifiers",
+ "parentCatalog": "Amplifiers/Comparators",
+ "catalogPath": [
+  "Integrated Circuits (ICs)",
+  "Linear",
+  "Amplifiers"
+ ],
+ "package": "QFN-9(1.5x1.5)",
+ "intro": "2.8V~5.5V 5mA 1-Channel 3Wx1@4Ω Class D QFN-9(1.5x1.5) Audio Amplifiers RoHS",
+ "desc": null,
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/f0d17a91a1483d82fe69b65edd70f2bd.pdf?productCode=C444418",
+ "params": [
+  {
+   "name": "Voltage - Supply",
+   "value": "2.8V~5.5V",
+   "number": null
+  },
+  {
+   "name": "Quiescent Current",
+   "value": "5mA",
+   "number": 0.005
+  },
+  {
+   "name": "Features",
+   "value": "Filterless architecture;Enable/shutdown function;Automatic mute/no-noise switch",
+   "number": null
+  },
+  {
+   "name": "Total Harmonic Distortion + Noise (THD+N)",
+   "value": "0.14%",
+   "number": 0.14
+  },
+  {
+   "name": "Operating Temperature",
+   "value": "-25℃~+85℃",
+   "number": null
+  },
+  {
+   "name": "Signal-to-Noise Ratio",
+   "value": "-",
+   "number": null
+  },
+  {
+   "name": "Number of Inputs",
+   "value": "1 Pair Differential Inputs",
+   "number": -1
+  },
+  {
+   "name": "Speaker Channels",
+   "value": "1-Channel",
+   "number": -1
+  },
+  {
+   "name": "Efficiency",
+   "value": "93%;86%",
+   "number": null
+  },
+  {
+   "name": "Output Power",
+   "value": "3Wx1@4Ω",
+   "number": -1
+  },
+  {
+   "name": "Class",
+   "value": "Class D",
+   "number": -1
+  },
+  {
+   "name": "Power Supply Rejection Ratio (PSRR)",
+   "value": "-68dB;-80dB",
+   "number": null
+  }
+ ]
+}
