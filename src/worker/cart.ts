@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import { CsvError } from '../domain/csv';
 import { parseLcscCart } from '../domain/lcscCart';
+import { cartLabel, cleanAlias, fxProblem, longDate } from '../domain/labels';
 import { MoneyError, parseMicro } from '../domain/money';
 import { PRIORITIES } from '../domain/purchasing';
 import { applyCartPlan, buildCartPlan } from '../db/cartImport';
@@ -18,7 +19,9 @@ const body = z.object({
   newProjectName: z.string().trim().min(1).max(100).optional(),
   priority: z.enum(PRIORITIES).default('medium'),
   /** IDR per 1 USD, as a decimal string: never a float. Converts the cart's USD prices into the IDR quotes. */
-  fxIdrPerUsd: z.string().regex(/^\d+(\.\d{1,6})?$/).optional(),
+  fxIdrPerUsd: z.string().trim().max(20).optional(),
+  /** A name for this import; display only. Empty means the default taken from the file name. */
+  alias: z.string().max(200).optional(),
   updateQuotes: z.boolean().default(true),
   apply: z.boolean().default(false),
 });
@@ -42,6 +45,10 @@ export function cartRoutes() {
     if (parsed.errors.length) return fail(parsed.errors);
     if (parsed.lines.length === 0) return fail(['The file has a header but no cart lines.']);
 
+    const named = cleanAlias(b.alias);
+    if (!named.ok) return fail([named.message]);
+    if (b.fxIdrPerUsd !== undefined) { const bad = fxProblem(b.fxIdrPerUsd); if (bad) return fail([bad]); }
+
     let fx: number;
     try {
       fx = b.fxIdrPerUsd !== undefined ? parseMicro(b.fxIdrPerUsd)
@@ -59,10 +66,17 @@ export function cartRoutes() {
     if (b.projectId !== undefined && !projectExists) return c.json({ errors: [`There is no project ${b.projectId}.`] }, 404);
     if (b.newProjectName !== undefined && projectExists) return fail([`A project named "${projectName}" already exists; choose it from the list instead.`]);
 
+    const sha256 = await sha256Hex(b.csv);
+    const before = (await meter.all<{ alias: string | null; filename: string; at: string }>(
+      c.env.DB.prepare(`SELECT alias, filename, at FROM import_runs WHERE kind = 'lcsc-cart' AND sha256 = ? ORDER BY id LIMIT 1`).bind(sha256)))[0];
+    if (before) plan.warnings.push(`This exact cart file was already imported on ${longDate(before.at)} as "${before.alias ?? cartLabel(before.filename)}"; a project that already has these needs keeps them, so importing it again changes nothing there.`);
+    const alias = named.alias ?? cartLabel(b.filename);
+
     const view = {
+      alias,
       project: { name: projectName, isNew: !projectExists },
       fxIdrPerUsd: b.fxIdrPerUsd ?? String(fx / 1e6),
-      summary: plan.summary, errors: plan.errors, warnings: plan.warnings,
+      summary: plan.summary, ...(plan.errors.length ? { errors: plan.errors } : {}), warnings: plan.warnings,
       lines: plan.lines.map((l) => ({
         row: l.line.row, lcsc: l.line.lcsc, mpn: l.line.mpn, manufacturer: l.line.manufacturer, qty: l.line.qty, moq: l.line.moq,
         unitPriceMicro: l.line.unitPriceMicro, part: l.part.action, partId: l.part.partId, matchedBy: l.part.matchedBy, category: l.part.category,
@@ -74,7 +88,7 @@ export function cartRoutes() {
 
     const res = await applyCartPlan(c.env.DB, meter, {
       plan, projectName: projectName!, projectExists, priority: b.priority, lcscSupplierId,
-      file: { name: b.filename, sha256: await sha256Hex(b.csv) }, now: new Date().toISOString(),
+      file: { name: b.filename, sha256, alias }, now: new Date().toISOString(),
     });
     return c.json({ mode: 'applied', ...view, rowsWritten: res.rowsWritten });
   });

@@ -1,4 +1,5 @@
 import { ImportCart } from './ImportCart';
+import { ImportHistory } from './ImportHistory';
 import { ImportLcsc } from './ImportLcsc';
 import { setParams, useRoute } from './route';
 
@@ -13,6 +14,7 @@ export function ImportPage() {
         <button role="tab" aria-selected={kind === 'cart'} className={kind === 'cart' ? 'tab on' : 'tab'} onClick={() => setParams({ kind: 'cart' })}>Cart export (parts to buy)</button>
       </div>
       {kind === 'cart' ? <ImportCart /> : <ImportLcsc />}
+      <ImportHistory />
     </>
   );
 }
