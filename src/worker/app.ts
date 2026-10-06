@@ -77,9 +77,9 @@ export function makeApp(deps: { jwks?: JWTVerifyGetKey; lcscFetch?: LcscFetcher;
     console.error('unhandled', ref ?? '', err);
     const tail = ref ? ` (reference ${ref})` : '';
     // Free-plan D1 refuses queries once a daily limit is used up (AGENTS.md section 2); say so instead of "something went wrong".
-    if (/D1_ERROR[^]*(daily|quota|limit)/i.test(String(err))) return c.json({ error: `The database's free daily limit is used up, so nothing could be done; it resets at 07:00 WIB.${tail}` }, 503);
+    if (/D1_ERROR[^]*\b(daily (row )?(read|write)s? limit|quota|rows? (read|written) limit)\b/i.test(String(err))) return c.json({ error: `The database's free daily limit is used up, so nothing could be done; it resets at 07:00 WIB.${tail}` }, 503);
     // An import applies in one atomic batch, so a failure there leaves nothing half-written.
-    if (c.req.path.startsWith('/api/import')) return c.json({ error: `The import failed on the server and nothing was written; the details are in the Worker log${tail}.` }, 500);
+    if (c.req.method === 'POST' && c.req.path.startsWith('/api/import/')) return c.json({ error: `The import failed on the server and nothing was written; the details are in the Worker log${tail}.` }, 500);
     return c.json({ error: `Something went wrong on the server and the details are only in its log${tail}.` }, 500);
   });
 

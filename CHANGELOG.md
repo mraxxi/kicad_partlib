@@ -15,7 +15,7 @@ D1 and is not tracked here; this file is about the code and the schema.
   Indonesian way (`17.893`, `17,893`) is refused with the reason instead of making every quote Rp 0; an unhandled server error on an
   import says nothing was written and gives the `cf-ray` reference.
 - **Readable names:** an order or an import has an optional name (migration `0008`: `orders.alias`, `import_runs.alias`, both with
-  `rev`). The default is computed, not stored: `LCSC 25 Aug 2024` for an order, `Cart 6 Oct 2026 14:05` for a cart. The real order
+  `rev`). The default for an order is computed, not stored (`LCSC 25 Aug 2024`, so existing orders need no backfill); a cart's default (`Cart 6 Oct 2026 14:05`, from the file name) is stored on its import row when it is applied. The real order
   number (orders) and the file's SHA-256 (carts) still detect a re-import; a name never does. Type a name on the form, rename from the
   new lists on the Import page (stale rename refused with a sentence), see it on a part's lots.
 - A cart file imported again now warns that it was already imported, and as what. 208 tests. Migration `0008` is applied nowhere yet.
