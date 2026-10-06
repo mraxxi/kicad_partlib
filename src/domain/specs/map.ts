@@ -21,6 +21,18 @@ function fromQuantity(def: SpecDef, raw: string, alts: Quantity[], src: Src): Sp
   return null;
 }
 
+/**
+ * Read a value the owner typed ("10uF", "4.5V~26V", "X7R") for a spec. Returns null when it does not parse as
+ * what the spec expects (a number in the wrong unit, a range where a number is wanted, ...).
+ */
+export function valueFromText(def: SpecDef, raw: string, src: Src): SpecValue | null {
+  const t = raw.trim();
+  if (!t || t === '-') return null;
+  if (def.kind === 'text') return { text: t, raw: t, src };
+  const alts = parseQuantity(t);
+  return alts ? fromQuantity(def, t, alts, src) : null;
+}
+
 export function extractFromLcsc(def: SpecDef, d: LcscDetail): SpecValue | null {
   if (def.derive) return def.derive(d);
   for (const label of def.lcsc) {
@@ -113,7 +125,11 @@ export function mergeSpecs(existing: PartSpecs | null, incoming: PartSpecs): { n
   for (const [key, to] of Object.entries(incoming.props)) {
     const from = existing?.props[key];
     if (!from) { props[key] = to; changes.push({ key, action: 'new', to }); continue; }
-    if (sameValue(from, to)) { changes.push({ key, action: 'same', from, to }); continue; }
+    if (sameValue(from, to)) {
+      // Same number, better source: record the upgrade (a description value confirmed by LCSC becomes LCSC's).
+      if (SRC_RANK[to.src] > SRC_RANK[from.src]) { props[key] = to; changes.push({ key, action: 'update', from, to }); } else changes.push({ key, action: 'same', from, to });
+      continue;
+    }
     if (SRC_RANK[to.src] >= SRC_RANK[from.src] && from.src !== 'manual') { props[key] = to; changes.push({ key, action: 'update', from, to }); continue; }
     changes.push({ key, action: 'kept', from, to, reason: from.src === 'manual' ? 'you set this by hand' : `${from.src} data outranks ${to.src}` });
   }

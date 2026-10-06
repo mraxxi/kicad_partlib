@@ -38,6 +38,8 @@ export function parsePartCode(text: string): number | null {
 /** A salvaged lot's cost is an ESTIMATED value, not money spent; reports keep the two apart. */
 export const isEstimatedCost = (source: Source): boolean => source === 'salvage';
 
+import type { PartSpecs } from './specs/types';
+
 export interface PartSummary {
   id: number;
   code: string;
@@ -62,6 +64,8 @@ export interface PartSummary {
   sources: Source[];
   conditions: Condition[];
   locations: string[];
+  /** Per-part specs (docs/spec-enrichment.md); null until enriched or edited by hand. */
+  specs: PartSpecs | null;
   status: StockStatus;
 }
 

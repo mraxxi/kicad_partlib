@@ -11,6 +11,7 @@ import { accessMiddleware } from './access';
 import { inventoryRoutes } from './inventory';
 import { purchasingRoutes } from './purchasing';
 import { enrichmentRoutes } from './enrichment';
+import type { LcscFetcher } from './lcsc';
 import type { AppEnv, Vars } from './env';
 
 const FREE_LIMITS = { rowsRead: 5_000_000, rowsWritten: 100_000, requests: 100_000 } as const;
@@ -53,7 +54,7 @@ function planView(plan: ImportPlan) {
   };
 }
 
-export function makeApp(deps: { jwks?: JWTVerifyGetKey } = {}) {
+export function makeApp(deps: { jwks?: JWTVerifyGetKey; lcscFetch?: LcscFetcher } = {}) {
   const app = new Hono<{ Bindings: AppEnv; Variables: Vars }>();
 
   app.use('/api/*', accessMiddleware(deps));
@@ -76,7 +77,7 @@ export function makeApp(deps: { jwks?: JWTVerifyGetKey } = {}) {
 
   app.route('/api', inventoryRoutes());
   app.route('/api', purchasingRoutes());
-  app.route('/api', enrichmentRoutes());
+  app.route('/api', enrichmentRoutes({ lcscFetch: deps.lcscFetch }));
 
   app.get('/api/health', (c) => c.json({ ok: true, identity: c.get('identity') }));
 

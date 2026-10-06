@@ -1,4 +1,5 @@
 import { normalizeManufacturer } from '../domain/normalize';
+import type { PartSpecs } from '../domain/specs/types';
 import { partCode, stockStatus, type Condition, type PartSummary, type Source } from '../domain/stock';
 import { Meter } from './meter';
 import { refuse, type Outcome } from './result';
@@ -7,10 +8,11 @@ interface AggRow {
   id: number; mpn: string; manufacturer: string; description: string; package: string; value: string;
   lcsc_code: string | null; needs_review: number; min_qty: number | null; rev: number; category: string | null;
   lot_count: number; total_qty: number; usable_qty: number; real_micro: number; est_micro: number;
-  untested_salvage_qty: number; sources: string | null; conditions: string | null; locations: string | null;
+  untested_salvage_qty: number; sources: string | null; conditions: string | null; locations: string | null; specs: string | null;
 }
 
 const split = (s: string | null): string[] => (s ? s.split(',') : []);
+function parseSpecs(s: string | null): PartSpecs | null { try { return s ? (JSON.parse(s) as PartSpecs) : null; } catch { return null; } }
 const microToIdr = (m: number) => Math.round(m / 1_000_000);
 
 function toSummary(r: AggRow): PartSummary {
@@ -23,6 +25,7 @@ function toSummary(r: AggRow): PartSummary {
     untestedSalvageQty: r.untested_salvage_qty,
     sources: split(r.sources) as Source[], conditions: split(r.conditions) as Condition[],
     locations: split(r.locations).sort(),
+    specs: parseSpecs(r.specs),
     status: stockStatus(r.usable_qty, r.min_qty),
   };
 }
@@ -38,7 +41,7 @@ export async function listParts(db: D1Database, meter: Meter, after: number, lim
     db
       .prepare(
         `SELECT p.id, p.mpn, p.manufacturer, p.description, p.package, p.value, p.lcsc_code,
-                p.needs_review, p.min_qty, p.rev, c.name AS category,
+                p.needs_review, p.min_qty, p.rev, p.specs, c.name AS category,
                 COUNT(l.id) AS lot_count,
                 COALESCE(SUM(l.qty_on_hand), 0) AS total_qty,
                 COALESCE(SUM(CASE WHEN l.condition <> 'faulty' THEN l.qty_on_hand END), 0) AS usable_qty,
@@ -87,7 +90,7 @@ export async function getPart(db: D1Database, meter: Meter, id: number): Promise
   const [partRes, lotRes, moveRes] = await db.batch([
     db.prepare(
       `SELECT p.id, p.mpn, p.manufacturer, p.description, p.package, p.value, p.lcsc_code, p.needs_review,
-              p.min_qty, p.rev, p.notes, p.datasheet_url, p.category_id, c.name AS category
+              p.min_qty, p.rev, p.notes, p.datasheet_url, p.category_id, p.specs, c.name AS category
          FROM parts p LEFT JOIN categories c ON c.id = p.category_id WHERE p.id = ?`,
     ).bind(id),
     db.prepare(
