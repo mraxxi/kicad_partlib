@@ -3,6 +3,7 @@ import { useMutation } from '@tanstack/react-query';
 import { PRIORITIES } from '../domain/purchasing';
 import { api } from './api';
 import { LinesTable } from './BuyList';
+import { ProjectBom } from './ProjectBom';
 import { useBuyList, useCategories, useParts, useProjects, useRefreshBuying } from './hooks';
 
 const STATUSES = ['planning', 'active', 'done', 'parked'] as const;
@@ -78,6 +79,7 @@ export function Projects({ projectId }: { projectId: number | null }) {
         <p className="lede"><a href="#/projects">← All projects</a></p>
         <h1>{project.name}</h1>
         <p className="lede">Status: <select value={project.status} onChange={(e) => setStatus.mutate({ ...project, status: e.target.value })}>{STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}</select></p>
+        <ProjectBom projectId={projectId} />
         <AddNeed projectId={projectId} onDone={() => void refresh()} />
         <h2>Needs</h2>
         {lines.length === 0 ? <p className="lede">No needs yet.</p> : <LinesTable lines={lines} suppliers={bl.data?.suppliers ?? []} refresh={() => void refresh()} />}

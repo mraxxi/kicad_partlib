@@ -85,6 +85,8 @@ export async function updateNeed(db: D1Database, meter: Meter, id: number, rev: 
   const vals: Array<string | number | null> = [];
   const col: Array<[keyof NeedEdit, string]> = [['qtyNeeded', 'qty_needed'], ['spares', 'spares'], ['priority', 'priority'], ['overrideSupplierId', 'override_supplier_id'], ['notes', 'notes']];
   for (const [k, c] of col) if (e[k] !== undefined) { sets.push(`${c} = ?`); vals.push(e[k] as string | number | null); }
+  // A hand edit of the quantity or status takes the need away from the KiCad BOM import (bom_owned): the BOM never overwrites it.
+  if (e.qtyNeeded !== undefined || e.status !== undefined) sets.push('bom_owned = 0');
   if (e.status !== undefined) {
     sets.push('status = ?'); vals.push(e.status);
     if (e.status === 'to_buy') sets.push('ordered_supplier_id = NULL', 'ordered_qty = NULL', 'ordered_total_idr = NULL', 'ordered_at = NULL');

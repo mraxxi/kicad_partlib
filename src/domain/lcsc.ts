@@ -146,7 +146,7 @@ export interface PlanInput {
   existingOrderPartIds: ReadonlySet<number>;
 }
 
-const mpnKey = (mpn: string, norm: string) => `${mpn.toLowerCase()}\u0000${norm}`;
+export const mpnKey = (mpn: string, norm: string) => `${mpn.toLowerCase()}\u0000${norm}`;
 const dash = (s: string) => (s === '-' ? '' : s);
 
 export function planLcscImport(input: PlanInput): Plan {

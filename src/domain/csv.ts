@@ -6,7 +6,7 @@
  * Returns rows of raw strings. A trailing blank line yields no row. A BOM is
  * stripped. An unterminated quote is an error, not silently-truncated data.
  */
-export function parseCsv(input: string): string[][] {
+export function parseCsv(input: string, delimiter = ','): string[][] {
   const text = input.charCodeAt(0) === 0xfeff ? input.slice(1) : input;
   const rows: string[][] = [];
   let row: string[] = [];
@@ -44,7 +44,7 @@ export function parseCsv(input: string): string[][] {
     if (c === '"' && !fieldStarted) {
       inQuotes = true;
       fieldStarted = true;
-    } else if (c === ',') {
+    } else if (c === delimiter) {
       endField();
     } else if (c === '\r') {
       if (text[i + 1] === '\n') i++;

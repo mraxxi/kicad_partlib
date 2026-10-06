@@ -10,6 +10,7 @@ import { importRoutes } from './imports';
 import { MoneyError, parseMicro } from '../domain/money';
 import { CsvError } from '../domain/csv';
 import { accessMiddleware } from './access';
+import { bomRoutes } from './bom';
 import { cartRoutes } from './cart';
 import { sha256Hex } from './util';
 import { inventoryRoutes } from './inventory';
@@ -88,6 +89,7 @@ export function makeApp(deps: { jwks?: JWTVerifyGetKey; lcscFetch?: LcscFetcher;
   app.route('/api', enrichmentRoutes({ lcscFetch: deps.lcscFetch }));
   app.route('/api', imageRoutes({ lcscFetch: deps.lcscFetch, imageFetch: deps.imageFetch }));
   app.route('/api', cartRoutes());
+  app.route('/api', bomRoutes({ lcscFetch: deps.lcscFetch }));
   app.route('/api', importRoutes());
 
   app.get('/api/health', (c) => c.json({ ok: true, identity: c.get('identity') }));
