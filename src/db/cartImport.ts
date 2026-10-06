@@ -54,7 +54,7 @@ export async function buildCartPlan(
  */
 export async function applyCartPlan(
   db: D1Database, meter: Meter,
-  a: { plan: CartPlan; projectName: string; projectExists: boolean; priority: string; lcscSupplierId: number; file: { name: string; sha256: string }; now: string },
+  a: { plan: CartPlan; projectName: string; projectExists: boolean; priority: string; lcscSupplierId: number; file: { name: string; sha256: string; alias: string }; now: string },
 ): Promise<{ rowsWritten: number }> {
   const { plan } = a;
   if (plan.errors.length) throw new Error('A plan with errors cannot be applied.');
@@ -83,8 +83,8 @@ export async function applyCartPlan(
        ON CONFLICT(part_id, supplier_id) DO UPDATE SET unit_price_idr = excluded.unit_price_idr, moq = excluded.moq,
               notes = excluded.notes, quoted_at = excluded.quoted_at`,
     ).bind(a.lcscSupplierId, a.now, quotesJson),
-    db.prepare(`INSERT INTO import_runs(kind, filename, sha256, rows_in, rows_new, rows_dup, at) VALUES ('lcsc-cart', ?1, ?2, ?3, ?4, ?5, ?6)`)
-      .bind(a.file.name, a.file.sha256, plan.summary.total, plan.summary.needsToCreate, plan.summary.needsExisting, a.now),
+    db.prepare(`INSERT INTO import_runs(kind, filename, sha256, rows_in, rows_new, rows_dup, at, alias) VALUES ('lcsc-cart', ?1, ?2, ?3, ?4, ?5, ?6, ?7)`)
+      .bind(a.file.name, a.file.sha256, plan.summary.total, plan.summary.needsToCreate, plan.summary.needsExisting, a.now, a.file.alias),
   ];
   await meter.batch(db, statements);
   return { rowsWritten: meter.rowsWritten - before };

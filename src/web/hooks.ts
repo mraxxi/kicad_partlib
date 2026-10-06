@@ -56,3 +56,12 @@ export function useRefreshBuying() {
 import type { LayoutOverride } from '../domain/specs';
 export const useLayouts = () =>
   useQuery({ queryKey: ['speclayouts'], staleTime: 60_000, queryFn: async () => (await api<{ layouts: Record<string, LayoutOverride> }>('/settings/speclayouts')).layouts });
+
+export interface ImportedOrder { id: number; orderNo: string; orderDate: string; alias: string | null; rev: number; lines: number; label: string }
+export interface ImportedCart { id: number; filename: string; alias: string | null; rev: number; at: string; rowsIn: number; label: string }
+export const useImports = () => useQuery({ queryKey: ['imports'], queryFn: () => api<{ orders: ImportedOrder[]; carts: ImportedCart[] }>('/imports') });
+/** An import was applied or renamed: the list of imports is stale. */
+export function useRefreshImports() {
+  const qc = useQueryClient();
+  return () => qc.invalidateQueries({ queryKey: ['imports'] });
+}

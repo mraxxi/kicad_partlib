@@ -282,3 +282,4 @@ matched identically. Rules worth keeping:
 | Part images | **built**, see `docs/part-images.md`: LCSC's first image at 900x900 (JPEG, about 60 KB, stored untouched in D1 `part_images`), shown in the side panel and on the part page, bulk fetch on the Enrich page. Image field and sizes verified against a real LCSC response. Migration `0007` is applied to **both** D1 databases (production 2026-10-06, after an export) and the Worker is deployed to both |
 | Parts columns + spec filters | **built**: LCSC # after MPN, drag-and-drop column order, Footprint and per-spec checklist filters with faceted counts. Browser only, no migration |
 | Look (lcsc.com design system) | **built**, see `docs/design-system.md`: colour tokens, two-tier header, badges, money in price orange. CSS only |
+| Import fixes | **built**: blank error box fixed (`Refusal`), clearer refusals, order/cart names (`src/domain/labels.ts`, Import page lists). Migration `0008` is applied **nowhere** yet |

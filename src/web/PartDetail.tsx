@@ -11,7 +11,7 @@ import { partsHref } from './route';
 
 interface Lot {
   id: number; source: 'order' | 'salvage' | 'manual'; condition: Condition; qtyOnHand: number; unitCostIdrMicro: number;
-  dateCode: string | null; locationId: number | null; locationCode: string | null; donorCode: string | null; orderNo: string | null;
+  dateCode: string | null; locationId: number | null; locationCode: string | null; donorCode: string | null; orderNo: string | null; orderLabel: string | null;
 }
 interface Move { id: number; lotId: number; delta: number; reason: string; note: string; at: string }
 type Detail = { part: PartSummary & { notes: string; datasheetUrl: string | null; categoryId: number | null }; lots: Lot[]; moves: Move[] };
@@ -71,7 +71,7 @@ function LotRow({ lot, locations, refresh }: { lot: Lot; locations: Location[]; 
     <>
       <tr>
         <td>#{lot.id}</td>
-        <td>{SOURCE_LABEL[lot.source]}{lot.orderNo ? ` ${lot.orderNo}` : ''}{lot.donorCode ? ` ${lot.donorCode}` : ''}</td>
+        <td>{SOURCE_LABEL[lot.source]}{lot.orderLabel ? <> <span title={lot.orderNo ?? undefined}>{lot.orderLabel}</span></> : ''}{lot.donorCode ? ` ${lot.donorCode}` : ''}</td>
         <td><span className={`chip cond-${lot.condition}`}>{CONDITION_LABEL[lot.condition]}</span></td>
         <td>{lot.locationCode ?? '–'}</td>
         <td className="num"><b>{num(lot.qtyOnHand)}</b></td>

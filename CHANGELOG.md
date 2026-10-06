@@ -16,6 +16,21 @@ D1 and is not tracked here; this file is about the code and the schema.
   "what I have in 0805". Any-of within a filter, all-of across filters; un-enriched parts show as (none). Filters are URL
   parameters (`pkg`, `sp.<spec>`). Logic is `src/domain/specs/facets.ts`. Browser only: no new D1 reads, routes or migrations.
 
+### Import fixes: no blank error box, clear refusals, readable names
+
+- **Fixed:** the cart import showed "This cannot be imported:" with nothing under it even when the preview was fine. The server sent
+  an empty `errors` list and the page drew the red box for any list, empty or not. Both import pages now go through one `Refusal`
+  component that draws nothing for an empty list; a preview or applied cart no longer carries an empty `errors`.
+- **Refusals say why:** a request that gets no answer, a non-JSON answer (login page, gateway error) and an answer with no reason each
+  get their own sentence (`src/web/api.ts`); bad request fields are named the way a person says them; a USD to IDR rate typed the
+  Indonesian way (`17.893`, `17,893`) is refused with the reason instead of making every quote Rp 0; an unhandled server error on an
+  import says nothing was written and gives the `cf-ray` reference.
+- **Readable names:** an order or an import has an optional name (migration `0008`: `orders.alias`, `import_runs.alias`, both with
+  `rev`). The default for an order is computed, not stored (`LCSC 25 Aug 2024`, so existing orders need no backfill); a cart's default (`Cart 6 Oct 2026 14:05`, from the file name) is stored on its import row when it is applied. The real order
+  number (orders) and the file's SHA-256 (carts) still detect a re-import; a name never does. Type a name on the form, rename from the
+  new lists on the Import page (stale rename refused with a sentence), see it on a part's lots.
+- A cart file imported again now warns that it was already imported, and as what. 208 tests. Migration `0008` is applied nowhere yet.
+
 ### Look: modeled on lcsc.com
 
 - The UI now follows a design system taken from the lcsc.com storefront: LCSC blue (`#1166dd`) for links, the active tab and
