@@ -1,15 +1,16 @@
 import { useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import {
   createColumnHelper, flexRender, getCoreRowModel, getSortedRowModel, useReactTable,
-  type ColumnDef, type ColumnOrderState, type ColumnSizingState, type SortingState, type VisibilityState,
+  type ColumnDef, type SortingState,
 } from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { CONDITION_LABEL, SOURCE_LABEL, STATUS_LABEL, parsePartCode, type PartSummary } from '../domain/stock';
-import { familyById, detectFamily, formatSpec, resolveLayout, specSortValue, summarize, type Family, type ResolvedLayout, type Summary } from '../domain/specs';
+import { facetOptions, facetParam, matchesFacets, packageSource, specSource, type FacetSource, type Selection, familyById, detectFamily, formatSpec, resolveLayout, specSortValue, summarize, type Family, type ResolvedLayout, type Summary } from '../domain/specs';
 import { valueSortKey } from '../domain/normalize';
 import { api } from './api';
 import { specColumnId } from './chain';
+import { LAYOUT_KEY, LEGACY_LAYOUT_KEY, PINNED, defaultLayout, moveColumn, parseLayout, stepColumn, type Layout } from './columns';
 import { idr } from './format';
 import { useCategories, useLayouts, useLocations, useParts } from './hooks';
 import { PartDetail } from './PartDetail';
@@ -17,6 +18,7 @@ import { usePrefs } from './prefs';
 import { setParams, useRoute } from './route';
 import { SortChain } from './SortChain';
 import { Segments } from './SpecCells';
+import { SpecFilters, type Facet } from './SpecFilters';
 
 // ---------------------------------------------------------------------------
 // Columns. Data, not markup: the chooser, the saved layout and the table all read this list. Saved layout is keyed
@@ -41,19 +43,8 @@ function useSummaries(parts: PartSummary[] | undefined, layouts: Record<string, 
   }, [parts, layouts]);
 }
 
-const BASE_ORDER = ['code', 'mpn', 'value', 'keyspecs', 'package', 'lcsc', 'category', 'manufacturer', 'description', 'lots', 'usable', 'total', 'min', 'status', 'locations', 'worth'];
-const PINNED = ['code', 'mpn'];
-const DEFAULT_HIDDEN = ['manufacturer', 'lots', 'total', 'min'];
-const LAYOUT_KEY = 'partlib.layout.parts.v2';
-
-interface Layout { visibility: VisibilityState; order: ColumnOrderState; sizing: ColumnSizingState }
 function loadLayout(): Layout {
-  try {
-    const v = JSON.parse(localStorage.getItem(LAYOUT_KEY) ?? '{}') as Partial<Layout>;
-    const saved = (v.order ?? []).filter((id) => BASE_ORDER.includes(id) || id.startsWith('spec:'));
-    const order = [...PINNED, ...saved.filter((id) => !PINNED.includes(id)), ...BASE_ORDER.filter((id) => !saved.includes(id) && !PINNED.includes(id))];
-    return { visibility: { ...Object.fromEntries(DEFAULT_HIDDEN.map((id) => [id, false])), ...(v.visibility ?? {}) }, order, sizing: v.sizing ?? {} };
-  } catch { return { visibility: Object.fromEntries(DEFAULT_HIDDEN.map((id) => [id, false])), order: BASE_ORDER, sizing: {} }; }
+  try { return parseLayout(localStorage.getItem(LAYOUT_KEY), localStorage.getItem(LEGACY_LAYOUT_KEY)); } catch { return defaultLayout(); }
 }
 
 function useMedia(query: string): boolean {
@@ -107,7 +98,7 @@ export function Parts() {
     () => (data ?? []).map((p) => ({ p, blob: `${p.code} ${p.mpn} ${p.manufacturer} ${p.description} ${p.lcscCode ?? ''} ${p.package} ${p.value} ${info.get(p.id)?.summary.all.map((s) => s.text).join(' ') ?? ''}`.toLowerCase() })),
     [data, info],
   );
-  const rows = useMemo(() => {
+  const baseRows = useMemo(() => {
     const t = query.trim().toLowerCase();
     const codeId = parsePartCode(t);
     return indexed
@@ -124,15 +115,29 @@ export function Parts() {
   // ---- which family are we looking at? Spec sorting only makes sense for one (voltage differs between families). ----
   const familiesHere = useMemo(() => {
     const ids = new Map<string, number>();
-    for (const p of rows) { const fam = p.specs?.family || detectFamily(undefined, undefined, p.category)?.id; if (fam) ids.set(fam, (ids.get(fam) ?? 0) + 1); }
+    for (const p of baseRows) { const fam = p.specs?.family || detectFamily(undefined, undefined, p.category)?.id; if (fam) ids.set(fam, (ids.get(fam) ?? 0) + 1); }
     return ids;
-  }, [rows]);
+  }, [baseRows]);
   const loneFamily = useMemo(() => {
     // One family among rows that have any family at all, and no row of another kind hiding in the list.
-    const unknown = rows.filter((p) => !(p.specs?.family || detectFamily(undefined, undefined, p.category))).length;
+    const unknown = baseRows.filter((p) => !(p.specs?.family || detectFamily(undefined, undefined, p.category))).length;
     return familiesHere.size === 1 && unknown === 0 ? familyById([...familiesHere.keys()][0]!) ?? null : null;
-  }, [familiesHere, rows]);
+  }, [familiesHere, baseRows]);
   const layout = useMemo(() => (loneFamily ? resolveLayout(loneFamily, layouts?.[loneFamily.id]) : null), [loneFamily, layouts]);
+
+  // ---- facet filters: Footprint always, then one per spec of the lone family (in its importance order). They sit
+  // AFTER the family test on purpose: filtering must not change which family we think we are looking at. ----
+  const sources = useMemo(() => {
+    const out: FacetSource<PartSummary>[] = [packageSource<PartSummary>()];
+    if (loneFamily && layout) for (const key of layout.order) { const s = specSource(loneFamily, key); if (s) out.push(s); }
+    return out;
+  }, [loneFamily, layout]);
+  const picked = useMemo<Selection>(() => Object.fromEntries(sources.map((s) => [s.id, (params.get(facetParam(s.id)) ?? '').split('|').filter(Boolean)])), [sources, params]);
+  const rows = useMemo(() => baseRows.filter((p) => matchesFacets(p, sources, picked)), [baseRows, sources, picked]);
+  const facets = useMemo<Facet<PartSummary>[]>(
+    () => sources.map((src) => ({ src, options: facetOptions(baseRows, src, sources, picked), selected: picked[src.id] ?? [] })), [baseRows, sources, picked]);
+  const facetParamNames = [...params.keys()].filter((k) => k === 'pkg' || k.startsWith('sp.'));
+  const setFacet = (id: string, keys: string[]) => setParams({ [facetParam(id)]: keys.join('|') || null });
 
   // The chain's highlight: spec key -> position in the chain (0 = primary).
   const hl = useMemo(() => {
@@ -304,13 +309,29 @@ export function Parts() {
   };
   const [chooser, setChooser] = useState(false);
   const leaf = table.getAllLeafColumns();
-  const move = (id: string, dir: -1 | 1) => {
-    const ids = leaf.map((c) => c.id);
-    const i = ids.indexOf(id), j = i + dir;
-    if (i < 0 || j < PINNED.length || j >= ids.length) return;
-    [ids[i], ids[j]] = [ids[j]!, ids[i]!];
-    setOrder(ids);
+  const move = (id: string, dir: -1 | 1) => setOrder(stepColumn(leaf.map((c) => c.id), id, dir));
+  // Drag and drop (native events, no library): a header or a Columns-menu row dropped before/after another column.
+  const [drag, setDrag] = useState<{ id: string; over: string | null; side: 'before' | 'after' } | null>(null);
+  const dragProps = (id: string) => PINNED.includes(id) ? {} : {
+    draggable: true,
+    onDragStart: (e: React.DragEvent) => { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', id); setDrag({ id, over: null, side: 'before' }); },
+    onDragEnd: () => setDrag(null),
   };
+  const dropProps = (id: string, vertical: boolean) => ({
+    onDragOver: (e: React.DragEvent) => {
+      if (!drag) return;
+      e.preventDefault();
+      const r = e.currentTarget.getBoundingClientRect();
+      const side = (vertical ? e.clientY - r.top < r.height / 2 : e.clientX - r.left < r.width / 2) ? 'before' : 'after';
+      if (drag.over !== id || drag.side !== side) setDrag({ ...drag, over: id, side });
+    },
+    onDrop: (e: React.DragEvent) => {
+      e.preventDefault();
+      if (drag) setOrder(moveColumn(leaf.map((c) => c.id), drag.id, id, drag.side));
+      setDrag(null);
+    },
+  });
+  const dropMark = (id: string) => (drag && drag.over === id && drag.id !== id ? ` drop-${drag.side}` : '');
 
   if (error) return <div className="box bad">{(error as Error).message}</div>;
   return (
@@ -344,22 +365,26 @@ export function Parts() {
               {leaf.map((c) => {
                 const pinned = PINNED.includes(c.id);
                 return (
-                  <div key={c.id} className="chooser-row">
+                  <div key={c.id} className={`chooser-row${pinned ? '' : ' draggable'}${dropMark(c.id)}`} {...dragProps(c.id)} {...dropProps(c.id, true)}>
                     <label><input type="checkbox" checked={c.getIsVisible()} disabled={pinned} onChange={(e) => c.toggleVisibility(e.target.checked)} /> {metaOf(c).label ?? c.id}</label>
-                    {!pinned && <span><button className="link" aria-label="Move left" onClick={() => move(c.id, -1)}>{'↑'}</button><button className="link" aria-label="Move right" onClick={() => move(c.id, 1)}>{'↓'}</button></span>}
+                    {!pinned && <span><button className="link" aria-label="Move up" onClick={() => move(c.id, -1)}>{'↑'}</button><button className="link" aria-label="Move down" onClick={() => move(c.id, 1)}>{'↓'}</button></span>}
                   </div>);
               })}
-              <button className="link" onClick={() => { setVisibility(Object.fromEntries(DEFAULT_HIDDEN.map((id) => [id, false]))); setOrder(BASE_ORDER); setSizing({}); }}>Reset to default</button>
+              <button className="link" onClick={() => { const d = defaultLayout(); setVisibility(d.visibility); setOrder(d.order); setSizing(d.sizing); }}>Reset to default</button>
             </div>)}
         </div>
       </div>
+      {data && <SpecFilters facets={facets} onChange={setFacet} />}
       <div className="statusline">
         <span>{rows.length.toLocaleString('id-ID')} of {(data?.length ?? 0).toLocaleString('id-ID')} parts{isFetching ? ' · refreshing…' : ''}</span>
         {loneFamily && <span className="chip">{loneFamily.label}s: spec sorting on</span>}
         {f.review && <button className="chip removable" onClick={() => setParams({ review: null })}>Needs review {'×'}</button>}
         {f.fam && <button className="chip removable" onClick={() => setParams({ fam: null })}>Type: {familyById(f.fam)?.label ?? f.fam} {'×'}</button>}
+        {facets.filter((x) => x.selected.length > 0).map((x) => (
+          <button key={x.src.id} className="chip removable" onClick={() => setFacet(x.src.id, [])}>
+            {x.src.label}: {x.options.filter((o) => x.selected.includes(o.key)).map((o) => o.label).join(', ')} {'×'}</button>))}
         {active.map((x) => <button key={x.key} className="chip removable" onClick={() => setParams({ [x.key]: null })}>{x.label}: {f[x.key]} {'×'}</button>)}
-        {(active.length > 0 || f.q || f.review || f.fam) && <button className="link" onClick={() => { setQ(''); setParams({ q: null, review: null, fam: null, cat: null, src: null, cond: null, loc: null, st: null }); }}>Clear all</button>}
+        {(active.length > 0 || f.q || f.review || f.fam || facetParamNames.length > 0) && <button className="link" onClick={() => { setQ(''); setParams({ q: null, review: null, fam: null, cat: null, src: null, cond: null, loc: null, st: null, ...Object.fromEntries(facetParamNames.map((k) => [k, null])) }); }}>Clear all</button>}
         <button className="link" onClick={() => void refetch()}>Refresh</button>
       </div>
       <div className="split">
@@ -372,9 +397,10 @@ export function Parts() {
                 const s = h.column.getIsSorted();
                 const rank = sorting.findIndex((x) => x.id === h.column.id);
                 return (
-                  <th key={h.id} className={`${metaOf(h.column).num ? 'num ' : ''}${pin !== undefined ? 'pinned' : ''}`} style={pin !== undefined ? { left: pin } : undefined}
+                  <th key={h.id} className={`${metaOf(h.column).num ? 'num ' : ''}${pin !== undefined ? 'pinned' : ''}${dropMark(h.column.id)}`} style={pin !== undefined ? { left: pin } : undefined}
+                    {...dropProps(h.column.id, false)}
                     onClick={h.column.getCanSort() ? h.column.getToggleSortingHandler() : undefined} aria-sort={s === 'asc' ? 'ascending' : s === 'desc' ? 'descending' : 'none'}>
-                    <span className="th-label">{flexRender(h.column.columnDef.header, h.getContext())}{s ? (s === 'asc' ? ' ▲' : ' ▼') : ''}{s && sorting.length > 1 ? <sup>{rank + 1}</sup> : null}</span>
+                    <span className="th-label" {...dragProps(h.column.id)}>{flexRender(h.column.columnDef.header, h.getContext())}{s ? (s === 'asc' ? ' ▲' : ' ▼') : ''}{s && sorting.length > 1 ? <sup>{rank + 1}</sup> : null}</span>
                     <span className="resizer" onClick={(e) => e.stopPropagation()} onMouseDown={h.getResizeHandler()} onTouchStart={h.getResizeHandler()} onDoubleClick={() => h.column.resetSize()} />
                   </th>);
               })}</tr>))}</thead>
