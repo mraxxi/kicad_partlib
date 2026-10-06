@@ -193,23 +193,21 @@ function Edit({ d, onSaved }: { d: Detail; onSaved: () => void }) {
  * copy right after a (re)fetch. A part with no image shows nothing, or a button when it has a C-number.
  */
 function PartImage({ id, hasCode, embedded }: { id: number; hasCode: boolean; embedded: boolean }) {
+  const [state, setState] = useState<'try' | 'none'>('try');
   const [version, setVersion] = useState(0);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [linkFailed, setLinkFailed] = useState(false);
-  const info = useQuery({ queryKey: ['part-image', id, version], retry: false, queryFn: () => api<{ version: string; full: string | null }>(`/parts/${id}/image-info`) });
-  const size = embedded ? 128 : 224;
+  // The stored picture is LCSC's 900x900; the browser shrinks it, which is sharp.
+  const size = embedded ? 160 : 360;
   const get = async () => {
     setBusy(true); setErr(null);
-    try { const [o] = await fetchPartImages([id]); if (o?.status === 'stored') { setLinkFailed(false); setVersion((v) => v + 1); } else setErr(o ? outcomeText(o) : 'The server did not answer.'); } catch (e) { setErr((e as Error).message); } finally { setBusy(false); }
+    try { const [o] = await fetchPartImages([id]); if (o?.status === 'stored') { setVersion((v) => v + 1); setState('try'); } else setErr(o ? outcomeText(o) : 'The server did not answer.'); } catch (e) { setErr((e as Error).message); } finally { setBusy(false); }
   };
-  // LCSC's 900x900 original, shrunk by the browser, is sharp; the stored 224x224 is the fallback if LCSC is unreachable.
-  const src = info.data ? (info.data.full && !linkFailed ? info.data.full : `/api/parts/${id}/image?v=${encodeURIComponent(info.data.version)}`) : null;
   return (
     <div className="part-image" style={{ width: size }}>
-      {src
-        ? <img key={src} src={src} width={size} height={size} alt="" referrerPolicy="no-referrer" onError={() => setLinkFailed(true)} style={{ objectFit: 'contain' }} />
-        : info.isError && hasCode && <button className="secondary" onClick={get} disabled={busy}>{busy ? 'Fetching\u2026' : 'Fetch image'}</button>}
+      {state === 'try'
+        ? <img key={version} src={`/api/parts/${id}/image?v=${version}`} width={size} height={size} alt="" onError={() => setState('none')} style={{ objectFit: 'contain' }} />
+        : hasCode && <button className="secondary" onClick={get} disabled={busy}>{busy ? 'Fetching\u2026' : 'Fetch image'}</button>}
       {err && <p className="lede" role="alert">{err}</p>}
     </div>
   );

@@ -105,7 +105,7 @@ export function Enrich() {
 
       <div className="box">
         <h2 style={{ marginTop: 0 }}>Part images</h2>
-        <p className="lede">Fetches LCSC&rsquo;s first picture for each part that has a C-number and no picture yet, keeps LCSC&rsquo;s 224&times;224 picture (about 10 KB). Parts that have the older, smaller 96&times;96 picture are fetched again. Parts you already have a picture for are skipped.</p>
+        <p className="lede">Fetches LCSC&rsquo;s first picture for each part that has a C-number and no picture yet, keeps LCSC&rsquo;s full 900&times;900 picture (about 60 KB, so it stays sharp). Parts that have an older, smaller picture are fetched again. Parts you already have a picture for are skipped.</p>
         <div className="row"><button onClick={fetchImages} disabled={busy}>Fetch part images</button>{busy && <button className="secondary" onClick={() => { stop.current = true; }}>Stop</button>}</div>
       </div>
 

@@ -19,28 +19,28 @@ exists at several sizes, the size being a folder in the URL. For C269266:
 | `/224x224/` | 9.5 KB | JPEG, 224x224 |
 | `/900x900/` (what the record lists) | 63.5 KB | JPEG, 900x900 |
 
-So **nothing has to be resized**. The Worker downloads the 224x224 file and stores the bytes as they are. (The first version stored 96x96; at the size it was shown it looked blurry, so it was raised to 224x224 on 2026-10-06 and the pending list offers parts that still hold a 96x96 picture again.) An earlier draft of this
+So **nothing has to be resized**. The Worker downloads the picture and stores the bytes as they are. An earlier draft of this
 branch had the browser downscale a larger image; that is gone because it was more code, more requests and a bigger image.
 
 ## Decisions
 
 | Question | Decision | Why |
 |---|---|---|
-| Where is it fetched? | The Worker: LCSC's record (1 subrequest), then the 224x224 picture (1 subrequest). Host must be `assets.lcsc.com`. | No CORS problem, no browser round trip, no proxy route. |
-| Which size? | 224x224, falling back to 96x96 if 224 is missing; the 900x900 original is never kept (cap 40 KB). | 96x96 looked blurry. 224x224 is shown at 128 CSS px in the side panel (sharp on a sharp screen) and 224 CSS px on the part page (1:1). |
+| Where is it fetched? | The Worker: LCSC's record (1 subrequest), then the 900x900 picture (1 subrequest). Host must be `assets.lcsc.com`. | No CORS problem, no browser round trip, no proxy route. |
+| Which size? | 900x900, falling back to 224x224 (cap 160 KB). | 96 and 224 looked blurry; see Sharpness. The browser shrinks the 900 px picture, which is sharp. |
 | Resizing? | None. Bytes are checked by magic number (JPEG/PNG/WebP) and stored untouched. | A Worker has 10 ms of CPU and cannot decode an image; it does not need to. |
-| Where is it stored? | `part_images` in D1: one row per part, BLOB, `fetched_at` as the ETag, `src_url` for provenance. Not R2. | D1 is the only store (AGENTS.md); R2 needs a payment method. 10 KB x 10,000 parts = 100 MB, 2% of D1's 5 GB. |
+| Where is it stored? | `part_images` in D1: one row per part, BLOB, `fetched_at` as the ETag, `src_url` for provenance. Not R2. | D1 is the only store (AGENTS.md); R2 needs a payment method. 60 KB x 10,000 parts = 600 MB, 12% of D1's 5 GB. |
 | Does it slow the parts list? | No. Bytes live in their own table that no list query reads. The table rows do not show thumbnails (one request per visible row). | Keeps the list at 4 rows read per part. |
 | Which parts? | Those with a C-number. Others show nothing. | Nothing else identifies LCSC's picture. |
 
 ## Sharpness (2026-10-06)
 
-LCSC publishes only 96, 224 and 900 px (every other folder answers 403). In LCSC's photos the part is small (a quarter of the frame, on a ruler grid),
-so the 224 px picture shows a chip about 60 px wide and looks blurry however it is displayed. The 900x900 original is sharp when the browser shrinks it.
-LCSC's image host allows hotlinking (a foreign `Referer` is fine, CORS is open), so the UI **links the 900x900 picture directly** and keeps the stored
-224x224 as the fallback if LCSC is unreachable. Nothing larger is stored: no extra D1 storage, no Worker cost. The alternative (store the 900 px copy,
-about 63 KB each, 630 MB at 10,000 parts) was offered to the owner. Trade-off of linking: LCSC sees the views, and the sharp picture needs LCSC to be reachable.
-`GET /api/parts/:id/image-info` gives the browser the 900x900 URL and the stored picture's version.
+LCSC publishes only 96, 224 and 900 px (every other folder answers 403). In LCSC's photos the part is small (about a quarter of the frame, on a ruler grid),
+so the 96 and 224 px pictures show a chip 20-60 px wide and look blurry however they are displayed; both were tried and rejected by the owner. The 900x900
+original is sharp when the browser shrinks it, so **the 900x900 JPEG (about 60 KB) is what is stored**, untouched, and shown at 160 px in the side panel and
+360 px on the part page. 224x224 is the fallback if the 900 is missing or over the 160 KB cap. Linking LCSC's picture instead of storing it was the other
+option (LCSC's image host allows hotlinking); the owner chose to store it, so the app keeps working if LCSC is down. Parts that hold a smaller picture are offered again by the
+pending list (a part whose 900 is unavailable is retried on every run).
 
 ## Cost (Workers Free, per day)
 
@@ -52,11 +52,11 @@ about 63 KB each, 630 MB at 10,000 parts) was offered to the owner. Trade-off of
 | Open a part with no image | 1 | 0 | 0 | 0 |
 
 The backfill is 1% of the daily request budget and 10% of the write budget, so even 10,000 parts fit in one sitting (the other Workers on the account share these).
-Per-request CPU is moving about 100 KB of bytes plus ten single-row writes, well under 10 ms.
+Per-request CPU is moving about 600 KB of bytes plus ten single-row writes, well under 10 ms.
 
 ## API
 
-* `GET /api/images/pending`: parts with a C-number and no image, or only the old 96x96 one (at most 500). Reads only.
+* `GET /api/images/pending`: parts with a C-number and no image, or only a smaller one (at most 500). Reads only.
 * `POST /api/images/fetch {partIds}` (at most 10): fetch and store. Per part: `stored`, `no_c_number`, `not_listed`, `no_image`, or `error` with a sentence. Idempotent: one image per part, a repeat replaces it.
 * `GET /api/parts/:id/image`: the image with an `ETag` and `no-cache`, so a revisit is a 304.
 

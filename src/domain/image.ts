@@ -6,8 +6,8 @@
  * shapes are accepted defensively; anything else returns null rather than a guess.
  */
 
-/** Largest stored image, in bytes. LCSC's own 224x224 JPEG is about 10 KB (96x96 about 3 KB); this only stops a mistake becoming a big row. */
-export const MAX_IMAGE_BYTES = 40 * 1024;
+/** Largest stored image, in bytes. LCSC's own 900x900 JPEG is about 60 KB (224x224 about 10 KB); this only stops a mistake becoming a big row. */
+export const MAX_IMAGE_BYTES = 160 * 1024;
 
 const HOSTS = new Set(['assets.lcsc.com']);
 
@@ -40,20 +40,16 @@ export function firstImageUrl(result: unknown): string | null {
 }
 
 /**
- * LCSC serves every image at several sizes, the size being a folder in the path (`/900x900/`). Verified 2026-10-06
- * against a real response: 96x96 = 2.9 KB, 224x224 = 9.5 KB, 900x900 = 63 KB, all JPEG. The owner found 96x96 blurry
- * (it is shown at 128-224 px), so we store LCSC's 224x224 as it is: no resizing anywhere. 96x96 is the fallback if 224 is
- * missing; the original (900) is deliberately never a candidate, it is too big to keep.
+ * LCSC serves every image at three sizes, the size being a folder in the path: 96x96 (about 3 KB), 224x224 (10 KB) and
+ * 900x900 (60 KB), all JPEG; every other folder answers 403 (verified 2026-10-06). The part is small in LCSC's photo
+ * (a quarter of the frame, on a ruler grid), so 96 and 224 look blurry at any display size. We therefore store the
+ * 900x900 as it is (no resizing anywhere) and let the browser shrink it, which is sharp. 224x224 is the fallback if
+ * the 900 is missing or too big to keep.
  */
 export function imageCandidates(url: string): string[] {
   const m = /\/(\d{2,4})x\1\//.exec(url);
   if (!m) return [url];
-  return ['224x224', '96x96'].map((s) => url.replace(m[0], `/${s}/`));
-}
-
-/** The same picture at LCSC's full 900x900 size, for showing sharp in the browser (hotlinked; never stored). */
-export function fullSizeUrl(url: string): string {
-  return url.replace(/\/\d{2,4}x\d{2,4}\//, '/900x900/');
+  return ['900x900', '224x224'].map((s) => url.replace(m[0], `/${s}/`));
 }
 
 /** What kind of image these bytes are, by their magic numbers (never by the claimed content type). */

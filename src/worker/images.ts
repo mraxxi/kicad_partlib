@@ -1,13 +1,13 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
-import { MAX_IMAGE_BYTES, fullSizeUrl, imageCandidates, isAllowedImageUrl, sniffImage } from '../domain/image';
+import { MAX_IMAGE_BYTES, imageCandidates, isAllowedImageUrl, sniffImage } from '../domain/image';
 import type { AppEnv, Vars } from './env';
 import { fetchLcsc, type LcscFetcher } from './lcsc';
 import { validate as zValidator } from './validate';
 
 /**
  * Part images (docs/part-images.md). LCSC publishes each picture at several sizes, so the Worker simply downloads
- * the 224x224 one (about 10 KB) and stores the bytes as they are: nothing is decoded or resized, which keeps
+ * the 900x900 one (about 60 KB) and stores the bytes as they are: nothing is decoded or resized, which keeps
  * a request far under the 10 ms CPU limit.
  *   POST /images/fetch  asks LCSC for each part's FIRST image and stores it (the only write; one row per part, a
  *                       repeat replaces it, so retrying is harmless)
@@ -28,12 +28,12 @@ export function imageRoutes(deps: { lcscFetch?: LcscFetcher; imageFetch?: ImageF
   const imageFetch = deps.imageFetch ?? defaultImageFetch;
   const r = new Hono<{ Bindings: AppEnv; Variables: Vars }>();
 
-  // Parts with a C-number and no image yet, or only the old 96x96 one (it looked blurry; this re-fetches it at 224x224).
+  // Parts with a C-number and no image yet, or only a smaller one (96 or 224 px looked blurry; this re-fetches it at 900x900).
   // The part scan is bounded by LIMIT; the image check is a primary-key probe.
   r.get('/images/pending', async (c) => {
     const parts = await c.get('meter').all<{ id: number; lcsc_code: string }>(c.env.DB.prepare(
       `SELECT p.id, p.lcsc_code FROM parts p WHERE p.lcsc_code IS NOT NULL AND p.lcsc_code <> ''
-          AND NOT EXISTS (SELECT 1 FROM part_images i WHERE i.part_id = p.id AND i.src_url NOT LIKE '%/96x96/%') ORDER BY p.id LIMIT 500`));
+          AND NOT EXISTS (SELECT 1 FROM part_images i WHERE i.part_id = p.id AND i.src_url LIKE '%/900x900/%') ORDER BY p.id LIMIT 500`));
     return c.json({ parts: parts.map((p) => ({ partId: p.id, code: p.lcsc_code })) });
   });
 
@@ -73,15 +73,6 @@ export function imageRoutes(deps: { lcscFetch?: LcscFetcher; imageFetch?: ImageF
     const results: Outcome[] = [];
     for (let i = 0; i < parts.length; i += CONCURRENCY) results.push(...(await Promise.all(parts.slice(i, i + CONCURRENCY).map(one))));
     return c.json({ results });
-  });
-
-  // Where the stored picture came from, plus LCSC's 900x900 version of it. The browser links that one directly: it is
-  // sharp at any size we show, costs the Worker nothing, and the stored copy is the fallback if LCSC is unreachable.
-  r.get('/parts/:id/image-info', zValidator('param', z.object({ id })), async (c) => {
-    const row = (await c.get('meter').all<{ src_url: string | null; fetched_at: string }>(
-      c.env.DB.prepare('SELECT src_url, fetched_at FROM part_images WHERE part_id = ?').bind(c.req.valid('param').id)))[0];
-    if (!row) return c.json({ error: 'This part has no image yet.' }, 404);
-    return c.json({ version: row.fetched_at, full: row.src_url && isAllowedImageUrl(row.src_url) ? fullSizeUrl(row.src_url) : null });
   });
 
   r.get('/parts/:id/image', zValidator('param', z.object({ id })), async (c) => {
