@@ -96,3 +96,8 @@ table.vt tbody tr.sel td { background: color-mix(in srgb, var(--accent) 16%, var
 .choice { flex-direction:row; align-items:flex-start; gap:10px; border:1px solid var(--line); border-radius:8px; padding:10px 14px; max-width:340px; cursor:pointer; color:var(--fg); }
 .choice.on { border-color:var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--bg)); }
 @media (max-width: 900px) { .fill { padding: 8px 8px 8px; } .toolbar h1 { width:100%; } }
+
+/* ---- part editing ---- */
+label.check { flex-direction:row; align-items:center; gap:8px; color:var(--fg); }
+details.identity { border:1px solid var(--line); border-radius:8px; padding:8px 12px; }
+details.identity summary { cursor:pointer; font-weight:600; }

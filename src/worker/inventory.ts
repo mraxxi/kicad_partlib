@@ -43,6 +43,12 @@ const partEdit = z.object({
   datasheetUrl: z.string().url().max(500).nullable().optional(),
   categoryId: z.number().int().positive().nullable().optional(),
   minQty: z.number().int().min(0).nullable().optional(),
+  needsReview: z.boolean().optional(),
+  mpn: z.string().trim().min(1).max(100).optional(),
+  manufacturer: z.string().trim().max(100).optional(),
+  lcscCode: z.string().trim().toUpperCase().regex(/^C\d+$/, 'an LCSC number like C12345').nullable().optional(),
+  /** Identity changes are refused with a preview unless this is true (plan-then-apply). */
+  confirmIdentity: z.boolean().default(false),
 });
 
 const donorBody = z.object({
@@ -83,8 +89,8 @@ export function inventoryRoutes() {
     respond(c, await getPart(c.env.DB, c.get('meter'), c.req.valid('param').id)));
 
   r.patch('/parts/:id', zValidator('param', z.object({ id })), zValidator('json', partEdit), async (c) => {
-    const { rev, ...edit } = c.req.valid('json');
-    return respond(c, await updatePart(c.env.DB, c.get('meter'), c.req.valid('param').id, rev, edit, now()));
+    const { rev, confirmIdentity, ...edit } = c.req.valid('json');
+    return respond(c, await updatePart(c.env.DB, c.get('meter'), c.req.valid('param').id, rev, edit, now(), confirmIdentity));
   });
 
   r.post('/parts/:id/lots', zValidator('param', z.object({ id })), zValidator('json', z.object({

@@ -5,6 +5,17 @@ D1 and is not tracked here; this file is about the code and the schema.
 
 ## [Unreleased]
 
+### Editing a part (fixing a broken import)
+
+The part page could only edit description, category, minimum, notes and the datasheet. Now it also edits **value**
+and **footprint** and the **needs-review** flag (cleared automatically when you add a description to a part LCSC
+gave none for), and, behind a confirmation, **MPN, manufacturer and C-number**.
+
+- Identity changes are plan-then-apply: the first request changes nothing and shows what is linked to the part; a
+  change that would make the part identical to another is refused. Past orders keep their original text, and a
+  re-import does not undo a correction (tested).
+- 94 tests.
+
 ### UI pass — the Parts table and wide screens
 
 Prompted by two complaints: the table's horizontal scrollbar sat at the bottom of 100 rows, and the layout stopped

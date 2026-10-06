@@ -226,6 +226,17 @@ at quote time and show their age. The LCSC cart format lives in one function (`l
 columns itself on upload (CSV/XLS/XLSX, <= 4 MB, <= 800 lines, needs Quantity plus a part identifier; verified
 2026-10-06), so the export is `LCSC Part Number,Quantity`.
 
+## 11a. Editing a part
+
+* **Direct edits** (no fan-out): value, footprint, description, category, notes, datasheet, minimum stock and the
+  needs-review flag. Optimistic `rev`; a stale save is refused with a field-level diff.
+* **Identity edits** (MPN, manufacturer, C-number) are plan-then-apply on the one endpoint: without
+  `confirmIdentity` the server changes nothing and answers 409 `confirm_identity` with the changes and what is linked
+  (lots, needs, quotes, order lines). Turning a part into another existing part is refused outright (`collision`),
+  even when confirmed; there is no merge yet. The `manufacturer_norm` key is re-derived on change.
+* **Imports never overwrite an existing part** (they only match it), so a hand correction survives re-importing the
+  same order; the original text stays in `order_lines.raw_json`. This is tested; keep it true.
+
 ## 11b. The Parts table (how it is built, so it stays that way)
 
 * **The table owns its scroll.** The Parts route renders a fixed-height `.fill` workspace; the table's `.viewport` is the

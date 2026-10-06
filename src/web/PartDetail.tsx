@@ -105,37 +105,80 @@ function AddStock({ partId, locations, onDone }: { partId: number; locations: Lo
   );
 }
 
+interface Conflict { kind: 'conflict'; currentRev: number; fields: Record<string, { yours: unknown; current: unknown }> }
+interface Confirm { kind: 'confirm_identity'; changes: Record<string, { from: string | null; to: string | null }>; impact: { lots: number; needs: number; quotes: number; orderLines: number } }
+interface Collision { kind: 'collision'; partId?: number }
+const FIELD_LABEL: Record<string, string> = { mpn: 'MPN', manufacturer: 'Manufacturer', lcscCode: 'LCSC #' };
+const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`;
+
 function Edit({ d, onSaved }: { d: Detail; onSaved: () => void }) {
   const cats = useCategories().data ?? [];
   const p = d.part;
-  const [f, setF] = useState({ description: p.description, categoryId: p.categoryId ? String(p.categoryId) : '', minQty: p.minQty === null ? '' : String(p.minQty), notes: p.notes, datasheetUrl: p.datasheetUrl ?? '' });
+  const [f, setF] = useState({
+    description: p.description, package: p.package, value: p.value, categoryId: p.categoryId ? String(p.categoryId) : '',
+    minQty: p.minQty === null ? '' : String(p.minQty), notes: p.notes, datasheetUrl: p.datasheetUrl ?? '', needsReview: p.needsReview,
+    mpn: p.mpn, manufacturer: p.manufacturer, lcsc: p.lcscCode ?? '',
+  });
+  const set = <K extends keyof typeof f>(k: K, v: (typeof f)[K]) => setF((x) => ({ ...x, [k]: v }));
   const [rev, setRev] = useState(p.rev);
   useEffect(() => { setRev(p.rev); }, [p.rev]);
-  const [conflict, setConflict] = useState<{ currentRev: number; fields: Record<string, { yours: unknown; current: unknown }> } | null>(null);
+  const [problem, setProblem] = useState<Conflict | Confirm | Collision | null>(null);
+  const identityChanged = f.mpn !== p.mpn || f.manufacturer !== p.manufacturer || (f.lcsc || null) !== p.lcscCode;
   const m = useMutation({
-    mutationFn: (useRev: number) => api(`/parts/${p.id}`, { method: 'PATCH', body: {
-      rev: useRev, description: f.description, categoryId: f.categoryId ? Number(f.categoryId) : null,
-      minQty: f.minQty === '' ? null : Number(f.minQty), notes: f.notes, datasheetUrl: f.datasheetUrl || null } }),
-    onSuccess: () => { setConflict(null); onSaved(); },
-    onError: (e) => { if (e instanceof ApiError && e.status === 409 && e.detail) setConflict(e.detail as NonNullable<typeof conflict>); },
+    mutationFn: (o: { rev: number; confirm: boolean }) => api(`/parts/${p.id}`, { method: 'PATCH', body: {
+      rev: o.rev, confirmIdentity: o.confirm, description: f.description, package: f.package, value: f.value,
+      categoryId: f.categoryId ? Number(f.categoryId) : null, minQty: f.minQty === '' ? null : Number(f.minQty),
+      notes: f.notes, datasheetUrl: f.datasheetUrl || null, needsReview: f.needsReview,
+      mpn: f.mpn, manufacturer: f.manufacturer, lcscCode: f.lcsc.trim() || null } }),
+    onSuccess: () => { setProblem(null); onSaved(); },
+    onError: (e) => { setProblem(e instanceof ApiError && e.detail ? (e.detail as Conflict | Confirm | Collision) : null); },
   });
+  const plainError = m.error && (!problem || problem.kind === 'collision') ? (m.error as Error).message : null;
   return (
-    <form className="grid" onSubmit={(e) => { e.preventDefault(); m.mutate(rev); }}>
-      <label className="wide">Description<input value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} /></label>
-      <label>Category<select value={f.categoryId} onChange={(e) => setF({ ...f, categoryId: e.target.value })}><option value="">none</option>{cats.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
-      <label>Minimum usable stock<input type="number" min={0} value={f.minQty} onChange={(e) => setF({ ...f, minQty: e.target.value })} placeholder="not tracked" /></label>
-      <label className="wide">Datasheet URL<input value={f.datasheetUrl} onChange={(e) => setF({ ...f, datasheetUrl: e.target.value })} /></label>
-      <label className="wide">Notes<input value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} /></label>
-      <div className="row"><button type="submit" disabled={m.isPending}>Save details</button>
-        {m.error && !conflict && <span className="err">{(m.error as Error).message}</span>}</div>
-      {conflict && (
+    <form className="grid" onSubmit={(e) => { e.preventDefault(); m.mutate({ rev, confirm: false }); }}>
+      <label>Value<input value={f.value} onChange={(e) => set('value', e.target.value)} placeholder="10uF, 4.7kΩ, 100nH…" /></label>
+      <label>Footprint<input value={f.package} onChange={(e) => set('package', e.target.value)} placeholder="0603, SOP-8…" /></label>
+      <label className="wide">Description
+        <input value={f.description} onChange={(e) => { set('description', e.target.value); if (e.target.value.trim() && p.description === '' && f.needsReview) set('needsReview', false); }} /></label>
+      <label>Category<select value={f.categoryId} onChange={(e) => set('categoryId', e.target.value)}><option value="">none</option>{cats.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
+      <label>Minimum usable stock<input type="number" min={0} value={f.minQty} onChange={(e) => set('minQty', e.target.value)} placeholder="not tracked" /></label>
+      <label className="wide">Datasheet URL<input value={f.datasheetUrl} onChange={(e) => set('datasheetUrl', e.target.value)} /></label>
+      <label className="wide">Notes<input value={f.notes} onChange={(e) => set('notes', e.target.value)} /></label>
+      <label className="check wide"><input type="checkbox" checked={f.needsReview} onChange={(e) => set('needsReview', e.target.checked)} /> Still needs review (shows on the dashboard until you clear it)</label>
+
+      <details className="wide identity" open={identityChanged}>
+        <summary>Identity: MPN, manufacturer, C-number</summary>
+        <p className="lede">These decide how imports and the buy list recognise this part. You will be shown what is linked to it before a change is applied. Past orders keep their original text.</p>
+        <div className="grid">
+          <label>MPN<input value={f.mpn} onChange={(e) => set('mpn', e.target.value)} required /></label>
+          <label>Manufacturer<input value={f.manufacturer} onChange={(e) => set('manufacturer', e.target.value)} /></label>
+          <label>LCSC #<input value={f.lcsc} onChange={(e) => set('lcsc', e.target.value)} placeholder="C12345" /></label>
+        </div>
+      </details>
+
+      <div className="row wide"><button type="submit" disabled={m.isPending}>Save details</button>{plainError && <span className="err">{plainError}</span>}
+        {problem?.kind === 'collision' && problem.partId && <a href={`#/parts/${problem.partId}`}>Open the other part</a>}</div>
+
+      {problem?.kind === 'confirm_identity' && (
+        <div className="box warn wide">
+          <b>Confirm the identity change. Nothing has been saved yet.</b>
+          <ul>{Object.entries(problem.changes).map(([k, v]) => <li key={k}>{FIELD_LABEL[k] ?? k}: <b>{v.from || '(empty)'}</b> → <b>{v.to || '(empty)'}</b></li>)}</ul>
+          <p>This part is linked to {plural(problem.impact.lots, 'lot')}, {plural(problem.impact.needs, 'project need')}, {plural(problem.impact.quotes, 'quote')} and {plural(problem.impact.orderLines, 'order line')}.
+            They stay attached. Future imports and buy-list lines will recognise the part by the new values.</p>
+          <div className="row">
+            <button type="button" onClick={() => m.mutate({ rev, confirm: true })} disabled={m.isPending}>Apply change</button>
+            <button type="button" className="secondary" onClick={() => setProblem(null)}>Not now</button>
+          </div>
+        </div>)}
+
+      {problem?.kind === 'conflict' && (
         <div className="box warn wide">
           <b>This part was changed somewhere else; nothing was saved.</b>
           <table><thead><tr><th>Field</th><th>Yours</th><th>Current</th></tr></thead>
-            <tbody>{Object.entries(conflict.fields).map(([k, v]) => <tr key={k}><td>{k}</td><td>{String(v.yours ?? '–')}</td><td>{String(v.current ?? '–')}</td></tr>)}</tbody></table>
+            <tbody>{Object.entries(problem.fields).map(([k, v]) => <tr key={k}><td>{FIELD_LABEL[k] ?? k}</td><td>{String(v.yours ?? '–')}</td><td>{String(v.current ?? '–')}</td></tr>)}</tbody></table>
           <div className="row">
-            <button type="button" onClick={() => m.mutate(conflict.currentRev)}>Keep mine</button>
-            <button type="button" className="secondary" onClick={() => { setConflict(null); onSaved(); }}>Keep theirs</button>
+            <button type="button" onClick={() => m.mutate({ rev: problem.currentRev, confirm: false })}>Keep mine</button>
+            <button type="button" className="secondary" onClick={() => { setProblem(null); onSaved(); }}>Keep theirs</button>
           </div>
         </div>)}
     </form>

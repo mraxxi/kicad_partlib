@@ -272,3 +272,82 @@ describe('the ledger after everything above', () => {
     await expect(env.DB.prepare('DELETE FROM stock_moves WHERE lot_id = ?').bind(lot.id).run()).rejects.toThrow(/append-only/);
   });
 });
+
+describe('correcting a part whose import was incomplete', () => {
+  async function v106() {
+    await importLcsc(FILES.a, { apply: true });
+    const p = (await env.DB.prepare("SELECT id, rev FROM parts WHERE mpn = 'V106M0603X5R250NKT'").first<{ id: number; rev: number }>())!;
+    return p;
+  }
+  const patch = (id: number, body: object) => api(`/api/parts/${id}`, body, 'PATCH');
+
+  it('starts flagged for review with nothing filled in', async () => {
+    const { id } = await v106();
+    const part = (await api(`/api/parts/${id}`)).json.part;
+    expect(part).toMatchObject({ description: '', package: '', value: '', category: 'Other', needsReview: true });
+  });
+
+  it('fills in value, footprint, description and category directly, and clears the review flag', async () => {
+    const { id, rev } = await v106();
+    const cat = (await env.DB.prepare("SELECT id FROM categories WHERE name = 'Passive - Capacitor'").first<{ id: number }>())!.id;
+    const r = await patch(id, { rev, value: '10uF', package: '0603', description: '10uF ±20% 25V Ceramic Capacitor X5R 0603', categoryId: cat, needsReview: false });
+    expect(r.json).toMatchObject({ ok: true, rev: rev + 1 });
+    const part = (await api(`/api/parts/${id}`)).json.part;
+    expect(part).toMatchObject({ value: '10uF', package: '0603', category: 'Passive - Capacitor', needsReview: false });
+    expect((await api('/api/dashboard')).json.needsReviewCount).toBe(0);
+  });
+
+  it('does not let a re-import undo the correction', async () => {
+    const { id, rev } = await v106();
+    await patch(id, { rev, value: '10uF', package: '0603', description: 'fixed by hand' });
+    const again = await importLcsc(FILES.a, { apply: true });
+    expect(again.json.rowsWritten).toBe(0);
+    expect((await api(`/api/parts/${id}`)).json.part).toMatchObject({ value: '10uF', package: '0603', description: 'fixed by hand' });
+  });
+
+  it('shows what an identity change affects and changes nothing until confirmed', async () => {
+    const { id, rev } = await v106();
+    const preview = await patch(id, { rev, mpn: 'V106M0603X5R250NKT-FIXED', lcscCode: 'C999999' });
+    expect(preview.status).toBe(409);
+    expect(preview.json.detail.kind).toBe('confirm_identity');
+    expect(preview.json.detail.changes).toEqual({
+      mpn: { from: 'V106M0603X5R250NKT', to: 'V106M0603X5R250NKT-FIXED' },
+      lcscCode: { from: 'C5240381', to: 'C999999' },
+    });
+    expect(preview.json.detail.impact).toEqual({ lots: 1, needs: 0, quotes: 0, orderLines: 1 });
+    expect((await api(`/api/parts/${id}`)).json.part).toMatchObject({ mpn: 'V106M0603X5R250NKT', rev });
+  });
+
+  it('applies a confirmed identity change, keeps stock attached, and re-derives the manufacturer key', async () => {
+    const { id, rev } = await v106();
+    const r = await patch(id, { rev, confirmIdentity: true, manufacturer: 'Viiyong Electronics Co., Ltd', lcscCode: 'C5240381' });
+    expect(r.json.ok).toBe(true);
+    const row = await env.DB.prepare('SELECT manufacturer, manufacturer_norm AS n FROM parts WHERE id = ?').bind(id).first<any>();
+    expect(row).toEqual({ manufacturer: 'Viiyong Electronics Co., Ltd', n: 'viiyongelectronics' });
+    expect((await api(`/api/parts/${id}`)).json.lots).toHaveLength(1);
+    await assertLedgerMatchesCache();
+  });
+
+  it('treats an identity field sent back unchanged as no change at all', async () => {
+    const { id, rev } = await v106();
+    const r = await patch(id, { rev, mpn: 'V106M0603X5R250NKT', value: '10uF' });
+    expect(r.json.ok).toBe(true); // no confirmation needed: only the value changed
+  });
+
+  it('refuses to turn a part into another existing part, even when confirmed', async () => {
+    const { id, rev } = await v106();
+    const other = (await env.DB.prepare("SELECT id FROM parts WHERE mpn = 'CL1210FN3R3P'").first<{ id: number }>())!.id;
+    const r = await patch(id, { rev, confirmIdentity: true, lcscCode: 'C48392107' });
+    expect(r.status).toBe(409);
+    expect(r.json.detail).toMatchObject({ kind: 'collision', partId: other });
+    expect(r.json.error).toMatch(/identical to P-\d{4}/);
+    expect((await api(`/api/parts/${id}`)).json.part.lcscCode).toBe('C5240381');
+  });
+
+  it('rejects a malformed C-number in a sentence', async () => {
+    const { id, rev } = await v106();
+    const r = await patch(id, { rev, lcscCode: '12345' });
+    expect(r.status).toBe(400);
+    expect(r.json.error).toMatch(/^The request was not valid: "lcscCode"/);
+  });
+});
