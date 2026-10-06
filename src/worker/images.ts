@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
-import { MAX_IMAGE_BYTES, imageCandidates, isAllowedImageUrl, sniffImage } from '../domain/image';
+import { MAX_IMAGE_BYTES, fullSizeUrl, imageCandidates, isAllowedImageUrl, sniffImage } from '../domain/image';
 import type { AppEnv, Vars } from './env';
 import { fetchLcsc, type LcscFetcher } from './lcsc';
 import { validate as zValidator } from './validate';
@@ -73,6 +73,15 @@ export function imageRoutes(deps: { lcscFetch?: LcscFetcher; imageFetch?: ImageF
     const results: Outcome[] = [];
     for (let i = 0; i < parts.length; i += CONCURRENCY) results.push(...(await Promise.all(parts.slice(i, i + CONCURRENCY).map(one))));
     return c.json({ results });
+  });
+
+  // Where the stored picture came from, plus LCSC's 900x900 version of it. The browser links that one directly: it is
+  // sharp at any size we show, costs the Worker nothing, and the stored copy is the fallback if LCSC is unreachable.
+  r.get('/parts/:id/image-info', zValidator('param', z.object({ id })), async (c) => {
+    const row = (await c.get('meter').all<{ src_url: string | null; fetched_at: string }>(
+      c.env.DB.prepare('SELECT src_url, fetched_at FROM part_images WHERE part_id = ?').bind(c.req.valid('param').id)))[0];
+    if (!row) return c.json({ error: 'This part has no image yet.' }, 404);
+    return c.json({ version: row.fetched_at, full: row.src_url && isAllowedImageUrl(row.src_url) ? fullSizeUrl(row.src_url) : null });
   });
 
   r.get('/parts/:id/image', zValidator('param', z.object({ id })), async (c) => {

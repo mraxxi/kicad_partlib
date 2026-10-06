@@ -51,6 +51,11 @@ export function imageCandidates(url: string): string[] {
   return ['224x224', '96x96'].map((s) => url.replace(m[0], `/${s}/`));
 }
 
+/** The same picture at LCSC's full 900x900 size, for showing sharp in the browser (hotlinked; never stored). */
+export function fullSizeUrl(url: string): string {
+  return url.replace(/\/\d{2,4}x\d{2,4}\//, '/900x900/');
+}
+
 /** What kind of image these bytes are, by their magic numbers (never by the claimed content type). */
 export function sniffImage(b: Uint8Array): 'image/webp' | 'image/jpeg' | 'image/png' | null {
   if (b.length >= 12 && b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 && b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50) return 'image/webp';

@@ -1,6 +1,6 @@
 import { env } from 'cloudflare:workers';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { firstImageUrl, imageCandidates, isAllowedImageUrl, sniffImage } from '../src/domain/image';
+import { firstImageUrl, fullSizeUrl, imageCandidates, isAllowedImageUrl, sniffImage } from '../src/domain/image';
 import { trimLcscResponse } from '../src/domain/specs';
 import { makeApp } from '../src/worker/app';
 import type { AppEnv } from '../src/worker/env';
@@ -47,6 +47,9 @@ describe('image domain', () => {
   it('wants LCSC\u2019s 224x224 picture first, then 96x96, and never the 900x900 original', () => {
     expect(imageCandidates(IMG)).toEqual([IMG.replace('900x900', '224x224'), IMG.replace('900x900', '96x96')]);
     expect(imageCandidates('https://assets.lcsc.com/a.jpg')).toEqual(['https://assets.lcsc.com/a.jpg']);
+  });
+  it('links the same picture at 900x900 for showing sharp', () => {
+    expect(fullSizeUrl(IMG.replace('900x900', '224x224'))).toBe(IMG);
   });
   it('recognises images by their bytes, not their claimed type', () => {
     expect(sniffImage(WEBP)).toBe('image/webp');
@@ -113,6 +116,15 @@ describe('part image API', () => {
     const r = (await (await post([other.id, 999999])).json()) as { results: Array<{ partId: number; status: string }> };
     expect(r.results.map((x) => x.status)).toEqual(['no_image']); // an unknown id is simply not in the answer
     expect(await count('part_images')).toBe(0);
+  });
+
+  it('tells the browser where the picture came from and its 900x900 version', async () => {
+    const part = await nth(0);
+    expect((await call(`/api/parts/${part.id}/image-info`)).status).toBe(404);
+    await post([part.id]);
+    const info = (await (await call(`/api/parts/${part.id}/image-info`)).json()) as { full: string; version: string };
+    expect(info.full).toBe(IMG);
+    expect(info.version).toMatch(/^\d{4}-/);
   });
 
   it('is limited to 10 parts a request, so it stays under the 50-subrequest limit', async () => {

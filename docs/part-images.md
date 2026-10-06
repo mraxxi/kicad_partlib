@@ -33,6 +33,15 @@ branch had the browser downscale a larger image; that is gone because it was mor
 | Does it slow the parts list? | No. Bytes live in their own table that no list query reads. The table rows do not show thumbnails (one request per visible row). | Keeps the list at 4 rows read per part. |
 | Which parts? | Those with a C-number. Others show nothing. | Nothing else identifies LCSC's picture. |
 
+## Sharpness (2026-10-06)
+
+LCSC publishes only 96, 224 and 900 px (every other folder answers 403). In LCSC's photos the part is small (a quarter of the frame, on a ruler grid),
+so the 224 px picture shows a chip about 60 px wide and looks blurry however it is displayed. The 900x900 original is sharp when the browser shrinks it.
+LCSC's image host allows hotlinking (a foreign `Referer` is fine, CORS is open), so the UI **links the 900x900 picture directly** and keeps the stored
+224x224 as the fallback if LCSC is unreachable. Nothing larger is stored: no extra D1 storage, no Worker cost. The alternative (store the 900 px copy,
+about 63 KB each, 630 MB at 10,000 parts) was offered to the owner. Trade-off of linking: LCSC sees the views, and the sharp picture needs LCSC to be reachable.
+`GET /api/parts/:id/image-info` gives the browser the 900x900 URL and the stored picture's version.
+
 ## Cost (Workers Free, per day)
 
 | Action | Worker requests | Subrequests | D1 rows written | D1 rows read |
