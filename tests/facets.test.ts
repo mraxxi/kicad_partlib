@@ -47,6 +47,11 @@ describe('spec facets', () => {
     const src = specSource(mos, 'rds_on')!;
     expect(facetOptions(ms, src, [src], {})).toHaveLength(2);
   });
+  it('does not mistake a package that is literally "-" for a missing value', () => {
+    const ps = [{ package: '-', specs: null }, { package: '', specs: null }];
+    const o = facetOptions(ps, packageSource<(typeof ps)[number]>(), [packageSource<(typeof ps)[number]>()], {});
+    expect(o.map((x) => [x.label, x.count]).sort()).toEqual([['(none)', 1], ['-', 1]]);
+  });
   it('has no source for a spec the family lacks', () => {
     expect(specSource(cap, 'rds_on')).toBeNull();
   });

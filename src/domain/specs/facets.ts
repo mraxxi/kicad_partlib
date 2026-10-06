@@ -7,7 +7,8 @@ import type { Family, PartSpecs } from './types';
  * all-of across facets). Each facet's list counts the rows that match every OTHER facet's selection, so the lists
  * answer the question instead of showing everything that exists.
  */
-export const NONE_KEY = '-';
+/** Control character on purpose: LCSC packages can literally be "-", and no real value contains one. */
+export const NONE_KEY = '\u0001none';
 const PKG_ID = 'pkg';
 /** URL parameter for a facet: footprint is `pkg`, a spec is `sp.<key>`. */
 export const facetParam = (id: string): string => (id === PKG_ID ? PKG_ID : `sp.${id}`);
