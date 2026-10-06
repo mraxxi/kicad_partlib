@@ -1,0 +1,83 @@
+{
+ "fetchedAt": "2026-10-06T06:12:10.711Z",
+ "status": "ok",
+ "productCode": "C2888448",
+ "productModel": "TSB001A3518A",
+ "brand": "BZCN",
+ "catalog": "Tactile Switches",
+ "parentCatalog": "Switches",
+ "catalogPath": [
+  "Switches"
+ ],
+ "package": "SMD,7.7x3.6mm",
+ "intro": "Tactile Switch 180gf 3.5mm 7.7mm x 3.55mm Surface Mount, Right Angle",
+ "desc": "Tactile Switch 180gf 3.5mm 7.7mm x 3.55mm Surface Mount, Right Angle",
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/8a295a6bf39940a2a166c2742ed3a864.pdf?productCode=C2888448",
+ "params": [
+  {
+   "name": "Voltage Rating",
+   "value": "12V",
+   "number": 12
+  },
+  {
+   "name": "Switching Life",
+   "value": "-",
+   "number": null
+  },
+  {
+   "name": "with Bracket",
+   "value": "With Bracket",
+   "number": -1
+  },
+  {
+   "name": "Width",
+   "value": "3.55mm",
+   "number": 3.55
+  },
+  {
+   "name": "Actuator Style",
+   "value": "Rectangular Button",
+   "number": -1
+  },
+  {
+   "name": "With Lamp",
+   "value": "No",
+   "number": -1
+  },
+  {
+   "name": "Mounting Type",
+   "value": "Surface Mount, Right Angle",
+   "number": -1
+  },
+  {
+   "name": "Circuit",
+   "value": "SPST",
+   "number": -1
+  },
+  {
+   "name": "Actuator/Cap Color",
+   "value": "Black",
+   "number": -1
+  },
+  {
+   "name": "Length",
+   "value": "7.7mm",
+   "number": 7.7
+  },
+  {
+   "name": "Operating Force",
+   "value": "1.8N",
+   "number": 180
+  },
+  {
+   "name": "Height",
+   "value": "3.5mm",
+   "number": 3.5
+  },
+  {
+   "name": "Contact Current",
+   "value": "50mA",
+   "number": 0.05
+  }
+ ]
+}

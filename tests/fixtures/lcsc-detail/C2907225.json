@@ -1,0 +1,54 @@
+{
+ "fetchedAt": "2026-10-06T06:12:13.685Z",
+ "status": "ok",
+ "productCode": "C2907225",
+ "productModel": "FRC0805F1202TS",
+ "brand": "FOJAN",
+ "catalog": "Chip Resistor - Surface Mount",
+ "parentCatalog": "Resistors",
+ "catalogPath": [
+  "Passives",
+  "Resistors"
+ ],
+ "package": "0805",
+ "intro": "12kΩ ±1% 125mW 0805 Thick Film Resistor",
+ "desc": "12kΩ ±1% 125mW 0805 Thick Film Resistor",
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/106fb934f95f063b695dad1b31b1eab8.pdf?productCode=C2907225",
+ "params": [
+  {
+   "name": "Resistance",
+   "value": "12kΩ",
+   "number": 12000
+  },
+  {
+   "name": "Power(Watts)",
+   "value": "125mW",
+   "number": 0.125
+  },
+  {
+   "name": "Voltage Rating",
+   "value": "150V",
+   "number": 150
+  },
+  {
+   "name": "Operating Temperature",
+   "value": "-55℃~+155℃",
+   "number": null
+  },
+  {
+   "name": "Type",
+   "value": "Thick Film Resistor",
+   "number": -1
+  },
+  {
+   "name": "Temperature Coefficient",
+   "value": "±100ppm/℃",
+   "number": null
+  },
+  {
+   "name": "Tolerance",
+   "value": "±1%",
+   "number": null
+  }
+ ]
+}

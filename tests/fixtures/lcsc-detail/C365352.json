@@ -1,0 +1,54 @@
+{
+ "fetchedAt": "2026-10-06T06:12:43.199Z",
+ "status": "ok",
+ "productCode": "C365352",
+ "productModel": "HPCR0805F8K20K9",
+ "brand": "RESI",
+ "catalog": "Chip Resistor - Surface Mount",
+ "parentCatalog": "Resistors",
+ "catalogPath": [
+  "Passives",
+  "Resistors"
+ ],
+ "package": "0805",
+ "intro": "8.2kΩ 250mW 150V Thick Film Resistor ±100ppm/℃ ±1% 0805 Chip Resistor - Surface Mount RoHS",
+ "desc": null,
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/beeb46c55a0364f1c303ace07887f938.pdf?productCode=C365352",
+ "params": [
+  {
+   "name": "Resistance",
+   "value": "8.2kΩ",
+   "number": 8200
+  },
+  {
+   "name": "Power(Watts)",
+   "value": "250mW",
+   "number": 0.25
+  },
+  {
+   "name": "Voltage Rating",
+   "value": "150V",
+   "number": 150
+  },
+  {
+   "name": "Operating Temperature",
+   "value": "-55℃~+125℃",
+   "number": null
+  },
+  {
+   "name": "Type",
+   "value": "Thick Film Resistor",
+   "number": -1
+  },
+  {
+   "name": "Temperature Coefficient",
+   "value": "±100ppm/℃",
+   "number": null
+  },
+  {
+   "name": "Tolerance",
+   "value": "±1%",
+   "number": null
+  }
+ ]
+}

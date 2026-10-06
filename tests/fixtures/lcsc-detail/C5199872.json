@@ -1,0 +1,39 @@
+{
+ "fetchedAt": "2026-10-06T06:12:54.942Z",
+ "status": "ok",
+ "productCode": "C5199872",
+ "productModel": "CL10B105KB8NQNC",
+ "brand": "Samsung Electro-Mechanics",
+ "catalog": "Ceramic Capacitors",
+ "parentCatalog": "Capacitors",
+ "catalogPath": [
+  "Passives",
+  "Capacitors"
+ ],
+ "package": "0603",
+ "intro": "1uF ±10% 50V Ceramic Capacitor X7R 0603",
+ "desc": "1uF ±10% 50V Ceramic Capacitor X7R 0603",
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/d6d93098a36e9601e7f96915ab74f302.pdf?productCode=C5199872",
+ "params": [
+  {
+   "name": "Capacitance",
+   "value": "1uF",
+   "number": 1000000
+  },
+  {
+   "name": "Temperature Coefficient",
+   "value": "X7R",
+   "number": -1
+  },
+  {
+   "name": "Tolerance",
+   "value": "±10%",
+   "number": null
+  },
+  {
+   "name": "Voltage Rating",
+   "value": "50V",
+   "number": 50
+  }
+ ]
+}

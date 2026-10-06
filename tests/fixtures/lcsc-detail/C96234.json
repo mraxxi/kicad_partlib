@@ -1,0 +1,50 @@
+{
+ "fetchedAt": "2026-10-06T06:13:06.724Z",
+ "status": "ok",
+ "productCode": "C96234",
+ "productModel": "PMEG4030EP,115",
+ "brand": "Nexperia",
+ "catalog": "Single Diodes",
+ "parentCatalog": "Diodes",
+ "catalogPath": [
+  "Discrete Semiconductors",
+  "Diodes",
+  "Rectifiers"
+ ],
+ "package": "SOD-128",
+ "intro": "Diode 40V 3A Surface Mount SOD-128",
+ "desc": "Diode 40V 3A Surface Mount SOD-128",
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/291203594adc1d293b35e3f6c6dbb4d1.pdf?productCode=C96234",
+ "params": [
+  {
+   "name": "Diode Configuration",
+   "value": "1 Independent",
+   "number": -1
+  },
+  {
+   "name": "Voltage - DC Reverse (Vr) (Max)",
+   "value": "40V",
+   "number": -1
+  },
+  {
+   "name": "Voltage - Forward(Vf@If)",
+   "value": "490mV@3A",
+   "number": 0.49
+  },
+  {
+   "name": "Reverse Leakage Current (Ir)",
+   "value": "200uA@40V",
+   "number": 0.0002
+  },
+  {
+   "name": "Non-Repetitive Peak Forward Surge Current",
+   "value": "50A",
+   "number": 50
+  },
+  {
+   "name": "Current - Rectified",
+   "value": "3A",
+   "number": 3
+  }
+ ]
+}

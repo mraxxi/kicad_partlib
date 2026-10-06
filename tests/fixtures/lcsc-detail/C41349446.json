@@ -1,0 +1,75 @@
+{
+ "fetchedAt": "2026-10-06T06:12:44.972Z",
+ "status": "ok",
+ "productCode": "C41349446",
+ "productModel": "AGM208AP",
+ "brand": "AGMSEMI",
+ "catalog": "Single FETs, MOSFETs",
+ "parentCatalog": "Transistors/Thyristors",
+ "catalogPath": [
+  "Discrete Semiconductors",
+  "Transistors",
+  "FETs, MOSFETs"
+ ],
+ "package": "PDFN-8(3.3x3.3)",
+ "intro": "N-Channel 20V 50A 38W Surface Mount PDFN-8(3.3x3.3)",
+ "desc": "N-Channel 20V 50A 38W Surface Mount PDFN-8(3.3x3.3)",
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/d45ea1a377bd4108292ab95f665ab4d8.pdf?productCode=C41349446",
+ "params": [
+  {
+   "name": "Drain to Source Voltage",
+   "value": "20V",
+   "number": 20
+  },
+  {
+   "name": "Operating Temperature",
+   "value": "-55℃~+150℃",
+   "number": null
+  },
+  {
+   "name": "Current - Continuous Drain(Id)",
+   "value": "50A",
+   "number": 50
+  },
+  {
+   "name": "Ciss-Input Capacitance",
+   "value": "1.201nF",
+   "number": 1201
+  },
+  {
+   "name": "Pd - Power Dissipation",
+   "value": "38W",
+   "number": 38
+  },
+  {
+   "name": "Reverse Transfer Capacitance (Crss)",
+   "value": "132pF",
+   "number": 132
+  },
+  {
+   "name": "RDS(on)",
+   "value": "12mΩ@2.5V",
+   "number": 0.012
+  },
+  {
+   "name": "Number",
+   "value": "1 N-channel",
+   "number": -1
+  },
+  {
+   "name": "Gate Charge(Qg)",
+   "value": "13nC@4.5V",
+   "number": 1.3e-8
+  },
+  {
+   "name": "Gate Threshold Voltage (Vgs(th))",
+   "value": "1V",
+   "number": 1
+  },
+  {
+   "name": "Type",
+   "value": "N-Channel",
+   "number": -1
+  }
+ ]
+}

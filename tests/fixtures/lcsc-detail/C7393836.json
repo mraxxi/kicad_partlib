@@ -1,0 +1,39 @@
+{
+ "fetchedAt": "2026-10-06T06:13:00.800Z",
+ "status": "ok",
+ "productCode": "C7393836",
+ "productModel": "TCC0201X7R103M500ZT",
+ "brand": "CCTC",
+ "catalog": "Ceramic Capacitors",
+ "parentCatalog": "Capacitors",
+ "catalogPath": [
+  "Passives",
+  "Capacitors"
+ ],
+ "package": "0201",
+ "intro": "10nF ±20% 50V Ceramic Capacitor X7R 0201",
+ "desc": "10nF ±20% 50V Ceramic Capacitor X7R 0201",
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/7c7c1f8fb8282eab2492065cbbfa1665.pdf?productCode=C7393836",
+ "params": [
+  {
+   "name": "Capacitance",
+   "value": "10nF",
+   "number": 10000
+  },
+  {
+   "name": "Temperature Coefficient",
+   "value": "X7R",
+   "number": -1
+  },
+  {
+   "name": "Tolerance",
+   "value": "±20%",
+   "number": null
+  },
+  {
+   "name": "Voltage Rating",
+   "value": "50V",
+   "number": 50
+  }
+ ]
+}

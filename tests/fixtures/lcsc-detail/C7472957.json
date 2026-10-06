@@ -1,0 +1,39 @@
+{
+ "fetchedAt": "2026-10-06T06:13:02.588Z",
+ "status": "ok",
+ "productCode": "C7472957",
+ "productModel": "HGC0402R5475M100NTEJ",
+ "brand": "Chinocera",
+ "catalog": "Ceramic Capacitors",
+ "parentCatalog": "Capacitors",
+ "catalogPath": [
+  "Passives",
+  "Capacitors"
+ ],
+ "package": "0402",
+ "intro": "4.7uF ±20% 10V Ceramic Capacitor X5R 0402",
+ "desc": "4.7uF ±20% 10V Ceramic Capacitor X5R 0402",
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/3025399970486160f9625970e5fd5973.pdf?productCode=C7472957",
+ "params": [
+  {
+   "name": "Capacitance",
+   "value": "4.7uF",
+   "number": 4700000
+  },
+  {
+   "name": "Temperature Coefficient",
+   "value": "X5R",
+   "number": -1
+  },
+  {
+   "name": "Tolerance",
+   "value": "±20%",
+   "number": null
+  },
+  {
+   "name": "Voltage Rating",
+   "value": "10V",
+   "number": 10
+  }
+ ]
+}

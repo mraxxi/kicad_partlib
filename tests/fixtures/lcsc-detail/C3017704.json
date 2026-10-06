@@ -1,0 +1,54 @@
+{
+ "fetchedAt": "2026-10-06T06:12:29.978Z",
+ "status": "ok",
+ "productCode": "C3017704",
+ "productModel": "SCR0603J30K",
+ "brand": "VO",
+ "catalog": "Chip Resistor - Surface Mount",
+ "parentCatalog": "Resistors",
+ "catalogPath": [
+  "Passives",
+  "Resistors"
+ ],
+ "package": "0603",
+ "intro": "100mW 30kΩ 75V Thick Film Resistor ±200ppm/℃ ±5% 0603 Chip Resistor - Surface Mount ",
+ "desc": null,
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/dfc341bc55ccd2ccb4cdebe7ede649f5.pdf?productCode=C3017704",
+ "params": [
+  {
+   "name": "Power(Watts)",
+   "value": "100mW",
+   "number": 0.1
+  },
+  {
+   "name": "Resistance",
+   "value": "30kΩ",
+   "number": 30000
+  },
+  {
+   "name": "Voltage Rating",
+   "value": "75V",
+   "number": 75
+  },
+  {
+   "name": "Operating Temperature",
+   "value": "-55℃~+155℃",
+   "number": null
+  },
+  {
+   "name": "Type",
+   "value": "Thick Film Resistor",
+   "number": -1
+  },
+  {
+   "name": "Temperature Coefficient",
+   "value": "±200ppm/℃",
+   "number": null
+  },
+  {
+   "name": "Tolerance",
+   "value": "±5%",
+   "number": null
+  }
+ ]
+}

@@ -1,0 +1,78 @@
+{
+ "fetchedAt": "2026-10-06T06:12:08.899Z",
+ "status": "ok",
+ "productCode": "C22435660",
+ "productModel": "TS1185A16020",
+ "brand": "HanElectricity",
+ "catalog": "Tactile Switches",
+ "parentCatalog": "Switches",
+ "catalogPath": [
+  "Switches"
+ ],
+ "package": "SMD,4x3mm",
+ "intro": "Tactile Switch SPST 1.6N Surface Mount",
+ "desc": "Tactile Switch SPST 1.6N Surface Mount",
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/ced5e0cb368ac297324dbfcb4618f290.pdf?productCode=C22435660",
+ "params": [
+  {
+   "name": "with Bracket",
+   "value": "Without Bracket",
+   "number": -1
+  },
+  {
+   "name": "Width",
+   "value": "2.9mm",
+   "number": 2.9
+  },
+  {
+   "name": "Operating Temperature",
+   "value": "-30℃~+85℃",
+   "number": null
+  },
+  {
+   "name": "Termination Style",
+   "value": "SMD(SMT) Tab",
+   "number": -1
+  },
+  {
+   "name": "Actuator Style",
+   "value": "Round Button",
+   "number": -1
+  },
+  {
+   "name": "With Lamp",
+   "value": "No",
+   "number": -1
+  },
+  {
+   "name": "Mounting Type",
+   "value": "Surface Mount,Vertical",
+   "number": -1
+  },
+  {
+   "name": "Length",
+   "value": "3.95mm",
+   "number": 3.95
+  },
+  {
+   "name": "Actuator/Cap Color",
+   "value": "Black",
+   "number": -1
+  },
+  {
+   "name": "Circuit",
+   "value": "SPST",
+   "number": -1
+  },
+  {
+   "name": "Height",
+   "value": "2mm",
+   "number": 2
+  },
+  {
+   "name": "Operating Force",
+   "value": "1.6N",
+   "number": 160
+  }
+ ]
+}

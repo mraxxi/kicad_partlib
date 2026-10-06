@@ -1,0 +1,109 @@
+{
+ "fetchedAt": "2026-10-06T06:12:04.131Z",
+ "status": "ok",
+ "productCode": "C157997",
+ "productModel": "B4B-ZR(LF)(SN)",
+ "brand": "JST",
+ "catalog": "Headers, Male Pins",
+ "parentCatalog": "Connectors",
+ "catalogPath": [
+  "Connectors, Interconnects",
+  "Rectangular Connectors"
+ ],
+ "package": "Through Hole,P=1.5mm",
+ "intro": "Connector Header 4 position 1.5mm Pitch 1A Through Hole -25℃~+85℃",
+ "desc": "Connector Header 4 position 1.5mm Pitch 1A Through Hole -25℃~+85℃",
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/b2e703aa9fce7953dfb0131ef882a6f6.pdf?productCode=C157997",
+ "params": [
+  {
+   "name": "Connector Type",
+   "value": "Through Hole",
+   "number": -1
+  },
+  {
+   "name": "Reference Series",
+   "value": "ZH",
+   "number": -1
+  },
+  {
+   "name": "Voltage Rating (Max)",
+   "value": "50V",
+   "number": 50
+  },
+  {
+   "name": "Contact Material",
+   "value": "Brass",
+   "number": -1
+  },
+  {
+   "name": "Number of PINs Per Row",
+   "value": "4",
+   "number": 4
+  },
+  {
+   "name": "Number of Rows",
+   "value": "1",
+   "number": 1
+  },
+  {
+   "name": "Pitch",
+   "value": "1.5mm",
+   "number": 1.5
+  },
+  {
+   "name": "Current Rating",
+   "value": "1A",
+   "number": 1
+  },
+  {
+   "name": "Flame Retardant Rating",
+   "value": "UL94V-0",
+   "number": -1
+  },
+  {
+   "name": "Supplementary Features",
+   "value": "-",
+   "number": -1
+  },
+  {
+   "name": "Operating Temperature",
+   "value": "-25℃~+85℃",
+   "number": null
+  },
+  {
+   "name": "Contact Plating",
+   "value": "Tin",
+   "number": -1
+  },
+  {
+   "name": "Number of PINs",
+   "value": "4P",
+   "number": -1
+  },
+  {
+   "name": "Plastic Material",
+   "value": "Glass fiber reinforced PA66",
+   "number": -1
+  },
+  {
+   "name": "Color",
+   "value": "White",
+   "number": -1
+  },
+  {
+   "name": "X-Length of Bottom Edge on Board (Spacing Line)",
+   "value": "7.5mm",
+   "number": 7.5
+  },
+  {
+   "name": "Row Spacing",
+   "value": "-",
+   "number": null
+  },
+  {
+   "name": "Pin Structure",
+   "value": "1x4P",
+   "number": -1
+  }
+ ]
+}

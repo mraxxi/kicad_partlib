@@ -1,0 +1,39 @@
+{
+ "fetchedAt": "2026-10-06T06:12:45.548Z",
+ "status": "ok",
+ "productCode": "C41378174",
+ "productModel": "RP2354A",
+ "brand": "Raspberry Pi",
+ "catalog": "Microcontrollers",
+ "parentCatalog": "Embedded Processors & Controllers",
+ "catalogPath": [
+  "Integrated Circuits (ICs)",
+  "Embedded"
+ ],
+ "package": "QFN-60(7x7)",
+ "intro": "ARM Cortex-M33 32 Bit 150MHz QFN-60(7x7) Microcontrollers ",
+ "desc": null,
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/792dacddbafc0211e5324099936ed8d3.pdf?productCode=C41378174",
+ "params": [
+  {
+   "name": "CPU Core",
+   "value": "ARM Cortex-M33",
+   "number": -1
+  },
+  {
+   "name": "Core Size",
+   "value": "32 Bit",
+   "number": -1
+  },
+  {
+   "name": "CPU Maximum Speed",
+   "value": "150MHz",
+   "number": 150000000
+  },
+  {
+   "name": "Oscillator Type",
+   "value": "Built-in+External",
+   "number": -1
+  }
+ ]
+}

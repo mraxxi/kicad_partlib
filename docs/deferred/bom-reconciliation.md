@@ -1,3 +1,5 @@
+> **Written for the Python design.** Phase 4 of the Worker plan (BOM import, field-name map in `settings`) supersedes the mechanics; the matching ideas still apply.
+
 # Deferred design: BOM reconciliation against a KiCad project
 
 **Status:** stub. Deliberately out of v1 — the owner chose "standalone, loose

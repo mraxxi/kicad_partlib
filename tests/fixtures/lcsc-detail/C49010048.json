@@ -1,0 +1,109 @@
+{
+ "fetchedAt": "2026-10-06T06:12:51.399Z",
+ "status": "ok",
+ "productCode": "C49010048",
+ "productModel": "HX-5569-2x2A",
+ "brand": "hanxia",
+ "catalog": "Headers, Male Pins",
+ "parentCatalog": "Connectors",
+ "catalogPath": [
+  "Connectors, Interconnects",
+  "Rectangular Connectors"
+ ],
+ "package": "Through Hole,P=4.2mm",
+ "intro": "Connector Header 4 position 4.2mm Pitch 4A Through Hole -25℃~+85℃",
+ "desc": "Connector Header 4 position 4.2mm Pitch 4A Through Hole -25℃~+85℃",
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/921bd14112f48e9b951c503ff18c0de9.pdf?productCode=C49010048",
+ "params": [
+  {
+   "name": "Connector Type",
+   "value": "Through Hole",
+   "number": -1
+  },
+  {
+   "name": "Reference Series",
+   "value": "-",
+   "number": -1
+  },
+  {
+   "name": "Voltage Rating (Max)",
+   "value": "300V",
+   "number": 300
+  },
+  {
+   "name": "Contact Material",
+   "value": "Brass",
+   "number": -1
+  },
+  {
+   "name": "Number of PINs Per Row",
+   "value": "2",
+   "number": 2
+  },
+  {
+   "name": "Number of Rows",
+   "value": "2",
+   "number": 2
+  },
+  {
+   "name": "Pitch",
+   "value": "4.2mm",
+   "number": 4.2
+  },
+  {
+   "name": "Current Rating",
+   "value": "4A",
+   "number": 4
+  },
+  {
+   "name": "Flame Retardant Rating",
+   "value": "UL94V-2",
+   "number": -1
+  },
+  {
+   "name": "Supplementary Features",
+   "value": "-",
+   "number": -1
+  },
+  {
+   "name": "Number of PINs",
+   "value": "4P",
+   "number": -1
+  },
+  {
+   "name": "Operating Temperature",
+   "value": "-25℃~+85℃",
+   "number": null
+  },
+  {
+   "name": "Contact Plating",
+   "value": "Tin",
+   "number": -1
+  },
+  {
+   "name": "Plastic Material",
+   "value": "PA66",
+   "number": -1
+  },
+  {
+   "name": "Color",
+   "value": "Transparent",
+   "number": -1
+  },
+  {
+   "name": "X-Length of Bottom Edge on Board (Spacing Line)",
+   "value": "-",
+   "number": null
+  },
+  {
+   "name": "Pin Structure",
+   "value": "2x2P",
+   "number": -1
+  },
+  {
+   "name": "Row Spacing",
+   "value": "4.2mm",
+   "number": 4.2
+  }
+ ]
+}

@@ -1,0 +1,54 @@
+{
+ "fetchedAt": "2026-10-06T06:12:50.222Z",
+ "status": "ok",
+ "productCode": "C48392107",
+ "productModel": "CL1210FN3R3P",
+ "brand": "CHANGLONG",
+ "catalog": "Chip Resistor - Surface Mount",
+ "parentCatalog": "Resistors",
+ "catalogPath": [
+  "Passives",
+  "Resistors"
+ ],
+ "package": "1210",
+ "intro": "3.3Ω ±1% 500mW 1210 Thick Film Resistor",
+ "desc": "3.3Ω ±1% 500mW 1210 Thick Film Resistor",
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/b82d0fda19f226111e3c739fe2a92274.pdf?productCode=C48392107",
+ "params": [
+  {
+   "name": "Power(Watts)",
+   "value": "500mW",
+   "number": 0.5
+  },
+  {
+   "name": "Resistance",
+   "value": "3.3Ω",
+   "number": 3.3
+  },
+  {
+   "name": "Voltage Rating",
+   "value": "200V",
+   "number": 200
+  },
+  {
+   "name": "Operating Temperature",
+   "value": "-55℃~+70℃",
+   "number": null
+  },
+  {
+   "name": "Type",
+   "value": "Thick Film Resistor",
+   "number": -1
+  },
+  {
+   "name": "Temperature Coefficient",
+   "value": "±200ppm/℃",
+   "number": null
+  },
+  {
+   "name": "Tolerance",
+   "value": "±1%",
+   "number": null
+  }
+ ]
+}

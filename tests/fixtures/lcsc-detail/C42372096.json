@@ -1,0 +1,54 @@
+{
+ "fetchedAt": "2026-10-06T06:12:46.125Z",
+ "status": "ok",
+ "productCode": "C42372096",
+ "productModel": "FRC0402F5760TS",
+ "brand": "FOJAN",
+ "catalog": "Chip Resistor - Surface Mount",
+ "parentCatalog": "Resistors",
+ "catalogPath": [
+  "Passives",
+  "Resistors"
+ ],
+ "package": "0402",
+ "intro": "576Ω ±1% 62.5mW 0402 Thick Film Resistor",
+ "desc": "576Ω ±1% 62.5mW 0402 Thick Film Resistor",
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/106fb934f95f063b695dad1b31b1eab8.pdf?productCode=C42372096",
+ "params": [
+  {
+   "name": "Power(Watts)",
+   "value": "62.5mW",
+   "number": 0.0625
+  },
+  {
+   "name": "Resistance",
+   "value": "576Ω",
+   "number": 576
+  },
+  {
+   "name": "Voltage Rating",
+   "value": "50V",
+   "number": 50
+  },
+  {
+   "name": "Operating Temperature",
+   "value": "-55℃~+155℃",
+   "number": null
+  },
+  {
+   "name": "Type",
+   "value": "Thick Film Resistor",
+   "number": -1
+  },
+  {
+   "name": "Temperature Coefficient",
+   "value": "±100ppm/℃",
+   "number": null
+  },
+  {
+   "name": "Tolerance",
+   "value": "±1%",
+   "number": null
+  }
+ ]
+}

@@ -1,0 +1,58 @@
+{
+ "fetchedAt": "2026-10-06T06:12:53.751Z",
+ "status": "ok",
+ "productCode": "C5139756",
+ "productModel": "HS96F04WF",
+ "brand": "HS",
+ "catalog": "LCD, OLED, Graphic",
+ "parentCatalog": "Displays",
+ "catalogPath": [
+  "Optoelectronics"
+ ],
+ "package": "-",
+ "intro": "0.96 128x64 SSD1335 SPI LCD, OLED, Graphic ",
+ "desc": null,
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/2dbafa33e978afd8fda6c9c422047a2d.pdf?productCode=C5139756",
+ "params": [
+  {
+   "name": "Display Range",
+   "value": "21.74x11.175mm",
+   "number": -1
+  },
+  {
+   "name": "Voltage - Supply",
+   "value": "1.65V~3.3V;8.5V~9.5V",
+   "number": null
+  },
+  {
+   "name": "Quiescent Current",
+   "value": "10uA",
+   "number": 0.00001
+  },
+  {
+   "name": "Operating Temperature",
+   "value": "-40℃~+70℃",
+   "number": null
+  },
+  {
+   "name": "Size",
+   "value": "0.96",
+   "number": 0.96
+  },
+  {
+   "name": "Dot Pixels",
+   "value": "128x64",
+   "number": -1
+  },
+  {
+   "name": "Controller Type",
+   "value": "SSD1335",
+   "number": -1
+  },
+  {
+   "name": "Interface",
+   "value": "SPI",
+   "number": -1
+  }
+ ]
+}

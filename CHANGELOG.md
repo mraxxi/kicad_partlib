@@ -5,197 +5,129 @@ D1 and is not tracked here; this file is about the code and the schema.
 
 ## [Unreleased]
 
-### Phase 0 — Scaffolding, and the decisions that are expensive to change
+### Importing an LCSC cart export
 
-The repository, the schema, the conventions and the documentation. **No
-production code**, on purpose: everything here is either a decision that is
-costly to revisit later or a measurement that stops a later phase guessing.
+- **Import page** now has two tabs: the order export (parts that arrived) and the **cart export** (parts to buy).
+- A cart becomes **needs** in a project you choose (or a new one) and an **LCSC quote** per line from the cart's price and
+  MOQ, converted at the rate you type. Preview first: new parts, parts you already have, **in stock** and **will buy**
+  per line, warnings (no price, quantity not a multiple, the project already needs a different amount).
+- Safe to repeat: existing needs keep their quantity, quotes with price breaks are left alone, the same cart twice changes
+  nothing. The LCSC cart exported from the buy list afterwards matches what was imported (tested).
+- The shared "create or match parts" statements moved to `partStatements` so both importers use the same code.
+- 183 tests.
 
-- **The schema, as `migrations/0001_initial.sql`.** Nine tables, with every
-  column commented as to *why* it exists and the reasoning collected in
-  `docs/schema.md`. Applying it twice is a no-op, asserted by a test, because
-  the REST API offers no atomic multi-statement write and a half-applied
-  migration's only recovery is to run it again.
+### Spec enrichment: Value, Key specs and sort chains
 
-- **A stocktake stores a delta, not an absolute count.** The first draft of the
-  design had a count set an absolute quantity that reset the running total. That
-  made replay **order-dependent**, and an order-dependent ledger across two
-  machines discards real movements *silently while still producing a plausible
-  number* — the worst available failure for an inventory. A stocktake now records
-  `counted_qty`, `basis_qty` and the computed `delta_qty`, so stock is
-  `SUM(delta_qty)`: commutative, clock-independent, and correct when an event
-  arrives late. The count has not lost its meaning, it has moved out of
-  arithmetic and into reporting, which is also where shrinkage becomes a report
-  you can run.
+- **Value is spec #0**: the first spec a part has, in its family's importance order, never blank for a part LCSC knows.
+  **Key specs** shows the next few; widening the column shows more, hover shows all. 11 families: resistor, capacitor,
+  inductor, MOSFET, diode, LDO, op amp, audio amp, LED, header/connector, MCU.
+- **Sort chain** on the Parts toolbar (appears when the visible rows are one family): sort by any spec, then break ties by
+  the next; built-in presets per family (e.g. MOSFET: Vds high-to-low then Rds(on) low-to-high), your own can be saved.
+  The sorted spec is highlighted inside the summary, the rest stay visible; test conditions that differ (Rds(on) at 10 V vs
+  2.5 V) are flagged. Footprints sort naturally (0201, 0402, 0603...). Optional per-spec columns via Columns.
+- **Specs from LCSC**: `Enrich` page and a "Fetch from LCSC" button on each part: fetch, review, apply selected. Passives
+  can also be filled offline from their description. Specs you enter by hand are never overwritten.
+- **Settings > Spec layouts**: reorder a family's specs (which one is Value), how many Key specs show, edit presets; stored
+  in the database so every machine shares them.
+- **Part page**: every spec with its source (by hand / LCSC / description), manual entry, and "All specs LCSC lists".
+- Migration `0006` (`parts.specs`, `part_enrichment`). 171 tests.
 
-- **Five `CHECK` constraints that bite**, each verified by a test: a purchase
-  cannot remove stock, consuming and scrapping cannot add it, a stocktake must
-  carry both quantities *and* agree with their difference, and a correction must
-  say what it reverses. Enforced by the database rather than trusted to a caller,
-  because with a single remote store there is no second copy to recover from.
+### Spec enrichment: groundwork and proof of concept
 
-- **Retry-safety, as the property everything else rests on.** With a
-  network-only store an HTTP timeout leaves you genuinely unsure whether the
-  write landed: blind retry double-counts stock and not retrying loses it. Every
-  event carries a client-generated `event_id` with `UNIQUE`, written with
-  `INSERT OR IGNORE`, so a retry is free. `parts` gets the same treatment via
-  `rev_token`, which was missing from the first draft — without it a retried
-  `UPDATE` reports zero rows changed and the tool blames a conflict that never
-  happened.
+Design recorded in `docs/spec-enrichment.md` (read it before touching specs). Nothing user-visible changes except one filter.
 
-- **The audit log is written by a trigger.** One parameterised statement is the
-  only atomic unit the D1 REST API offers (`BEGIN TRANSACTION` is rejected, and
-  atomic `batch()` is a Workers-runtime capability with no HTTP equivalent), so
-  "UPDATE the part, then INSERT an audit row" can land one and lose the other.
-  `parts_audit_update` runs inside the implicit transaction that already wraps
-  the `UPDATE`. The cost is recorded where it will be read: adding a column to
-  `parts` now requires a migration that recreates the trigger.
+- **Needs review (N)** toggle on the Parts toolbar, hidden when nothing is flagged; the dashboard count links to it
+  (`#/parts?review=1`).
+- **`src/domain/quantity.ts`**: parses LCSC-style value strings (`20mOhm@10V`, `4.5V~26V`, `+-100ppm/C`, `9V/us`,
+  `2KB`, `315Wx2@4Ohm;600Wx1@2Ohm`, ...) into SI numbers; the application owns units, not an LLM.
+- **Proof of concept** (`scripts/poc-lcsc/`): LCSC's product-detail endpoint returned labelled parameters for 110 of
+  111 of the owner's parts; the parser agrees with LCSC's own numbers on 393 values with zero inconsistencies.
+  Fixtures in `tests/fixtures/lcsc-detail/`; the owner's cart export added as `tests/fixtures/lcsc/export_cart_*.csv`.
+- Worker egress to LCSC is still unverified (see the doc).
+- 129 tests.
 
-- **`stock_checkpoints`, designed as a cache with a proof attached.** The first
-  draft budgeted 250 k rows read per day and reached that figure by counting
-  `parts` and forgetting the ledger entirely. Measured properly: the naive
-  aggregate scans ~22,000 rows per refresh at today's scale, ~82,000 by year
-  three, which at 50 refreshes a day is **82% of the 5 M/day free-tier cap**. The
-  cap is a deadline, not headroom. `through_seq` is the proof that keeps the
-  checkpoint honest, and the monotone upsert is what makes two racing devices
-  converge instead of letting a stale writer roll the number back.
+### Editing a part (fixing a broken import)
 
-- **Measured facts, so later phases stop guessing** (`AGENTS.md` §2). Against
-  D1's own engine via `wrangler d1 execute --local`: `AUTOINCREMENT`, partial
-  indexes, CTEs, `AFTER UPDATE` triggers, `json_each(?)`, `sqlite_master` and
-  `pragma_table_info()` all work. Two findings worth the trouble:
-  - **`seq` is monotonic but not gapless** — an ignored `INSERT OR IGNORE` still
-    consumes a sequence number. Three statements, one a duplicate, left 2 rows
-    with `max_seq = 3`. Harmless for ordering, fatal for any future
-    "pull everything since sequence N" that assumes density.
-  - **`json_each(?)` carries types.** `typeof()` on a column inserted through
-    `json_extract` returns `integer`, so the one-bound-parameter bulk-insert
-    shape does not stringify micro-USD amounts. This replaces the first draft's
-    "≤ 8 rows per statement", which would have made a 2,000-row import 250+
-    round trips instead of under 20.
+The part page could only edit description, category, minimum, notes and the datasheet. Now it also edits **value**
+and **footprint** and the **needs-review** flag (cleared automatically when you add a description to a part LCSC
+gave none for), and, behind a confirmation, **MPN, manufacturer and C-number**.
 
-- **Qt measured rather than feared.** `filterwarnings = error` plus PySide6
-  6.11.2 on Python 3.14.7 raised **no warnings** across `QApplication`,
-  `QAbstractTableModel`, `QSortFilterProxyModel`, `QTableView`, `QThreadPool`,
-  `QRunnable`, `Signal` and `QTimer` — so no ignore list is needed yet, and one
-  should only appear with a comment saying why. And `pytest-qt` 4.5.0 **does**
-  fail a test when a slot raises, so the sibling repo's hardest-won Tk lesson
-  (an exception routed to `report_callback_exception`, letting `invoke()` return
-  normally and the test pass with the bug in place) has no analogue to rebuild
-  here. "Press the button in the test" still applies: pytest-qt only surfaces
-  what something actually invokes.
+- Identity changes are plan-then-apply: the first request changes nothing and shows what is linked to the part; a
+  change that would make the part identical to another is refused. Past orders keep their original text, and a
+  re-import does not undo a correction (tested).
+- 94 tests.
 
-- **A hazard specific to this machine.** PyQt5 *and* PyQt6 are installed
-  alongside PySide6, and importing two Qt bindings into one process can crash
-  it. `AGENTS.md` bans importing `PyQt5`/`PyQt6` anywhere in this repository.
+### UI pass — the Parts table and wide screens
 
-- **wrangler could not write its cache here.** `wrangler d1 list` failed with
-  *"A permission error occurred while accessing the file system"* against
-  `/home/archvan/node_modules/.cache/wrangler`: wrangler walks up to the nearest
-  `node_modules`, and a root-owned one left by a `sudo npm` install of `9router`
-  sits above this project. An empty, gitignored project-local `node_modules/`
-  stops it walking up. `CACHE_DIR` does not override this — measured, not
-  assumed.
+Prompted by two complaints: the table's horizontal scrollbar sat at the bottom of 100 rows, and the layout stopped
+at 1100 px so an ultrawide (2560x1080) mostly showed margin.
 
-- **Deferred designs, written as designs rather than wishes.**
-  `docs/deferred/locations-and-labels.md` specifies the whole feature — schema,
-  the `transfer` event pair and the non-atomicity guardrail it needs, CLI and GUI
-  surface, SVG sheet geometry, and pinned QR parameters (byte mode, version
-  chosen from payload length, EC level M, all eight masks evaluated) — so that
-  adding it later needs no new decisions. It also answers the question most
-  likely to be got wrong: **per-location quantity must be derived from the
-  ledger**, via the nullable `location_id` that ships unused in
-  `0001_initial.sql`, and not stored as a mutable number. Also
-  `bom-reconciliation.md` and `offline-mode.md`, the latter existing mainly to
-  make sure the D1-only decision is revisited deliberately rather than eroded.
+- **The table scrolls inside its own box** (sticky header, always-visible scrollbars) sized to the window; the page
+  itself no longer scrolls on the Parts view. Rows are **virtualised**: 5,000 parts render ~45 rows and scroll instantly.
+- **Fills the screen**: the Description column absorbs spare width, so there is no blank strip on wide monitors.
+  Part and MPN stay pinned while you scroll sideways.
+- **Columns**: Value, Footprint and LCSC # up front (the owner's priority order); a column chooser (show/hide, reorder),
+  drag-to-resize, double-click to reset a width. Saved per column id, never by position (AGENTS.md §8). The rupee
+  column is now "Worth" so it no longer collides with the component "Value".
+- **Value sorts by magnitude and unit** (10nF < 100nF < 1uF; milli vs mega by case), via `valueToSi`/`valueSortKey` in
+  the domain (tested). Text order gets this wrong; a typed `value_si` column is still the long-term fix (rule 9).
+- **Filters live in the URL** (`#/parts?q=0603&st=ok`): back, refresh and "back to all parts" keep your view and
+  scroll position. Active filters show as removable chips.
+- **Side panel**: on screens >= 1400 px a row opens the part beside the table; arrow keys move the selection, Enter
+  opens the full page, Esc closes, `/` focuses search.
+- **Settings page**: row density (compact/comfortable), side panel on/off, theme (system/light/dark), reset the saved
+  table layout. Stored in this browser only (`localStorage`, fails soft); each machine keeps its own.
+- `npm run build:web` now clears old hashed assets first.
+- 86 tests.
 
-- **21 tests, offline.** The suite builds an in-memory SQLite database from the
-  real migration files, so the schema under test is the schema that ships rather
-  than a hand-maintained copy that can drift. Foreign keys are enabled in the
-  fixture, because SQLite leaves them off by default and D1 does not — a suite
-  that forgets would accept an event pointing at a part that does not exist.
+### Phase 3 — purchasing
 
-- **The databases exist, and the migration is applied.** `kicad-partlib` and
-  `kicad-partlib-staging` (region APAC), taking the account to 8 of its 10 free
-  slots. The rehearse-then-promote workflow from `docs/d1-setup.md` was used for
-  its own first migration rather than merely described: staging first, 21
-  commands, then production. Production holds the schema and **zero rows**.
+- **Migration `0005`**: `projects`, `needs` (one per project+part; frozen `ordered_*` cost), `quotes` (one per
+  part+supplier, price breaks, MOQ, listing shipping, risk, `quoted_at`).
+- **`src/domain/purchasing.ts`** (pure): stock allocation, price breaks, landed-cost ranking, supplier choice with
+  override, order grouping, recap, spend slices, price matrix, order-shipping rule, LCSC cart CSV. The owner's sheet
+  sample rows are ported as the acceptance fixture and reproduce to the rupiah.
+- **API/UI**: Projects (add needs, create missing parts), Buy list (edit need/spares/priority/supplier inline, recap,
+  matrix, mark ordered with a preview, LCSC cart download), Suppliers (shipping, free-shipping threshold), Quotes on
+  each part. Importing an LCSC order closes the buy-list lines it fulfils and says so in the preview.
+- Fixes three sheet errors: shared stock, per-line MOQ/shipping, ordered lines skewing ranking (AGENTS.md §11).
+- 82 tests.
 
-### Phase 0 — probes answered against the live database
+### Phase 2 — inventory UI
 
-The remaining probes were run on `kicad-partlib-staging`, which is what it is
-for. Three of them changed something.
+- **Migration `0004`**: `parts.min_qty` (reorder threshold, per part), `lots.create_key` (retry-safe lot
+  creation), partial index for reorder queries.
+- **API**: keyset-paged parts with stock aggregated in one pass over lots; part detail with lots and
+  history; `PATCH` with `rev` and a field-level conflict diff; `applyMove` (the only code that changes a
+  lot's quantity; recomputes from the ledger); stocktake-as-delta; partial-lot reclassify via split;
+  manual stock; locations and donors CRUD; harvest (find-or-create parts, salvaged lots with *estimated*
+  value kept apart from money spent); dashboard; sentence-style validation errors.
+- **UI**: Dashboard, Parts (TanStack Table, search/filter/sort), Part detail, Salvage with a
+  keyboard-first harvest form, Locations, Import; usable at phone width.
+- Not using Drizzle (see AGENTS.md §3). Local dev needs `.dev.vars` blanking the Access settings.
+- 61 tests.
 
-- **A multi-statement batch IS atomic (P3)** — a valid `INSERT` followed by a
-  primary-key violation left **zero** rows. So a migration file cannot land
-  half-applied, and the per-statement migrations ledger keyed
-  `(version, stmt_index)` that was being held in reserve is **not needed**. This
-  contradicts the assumption the design was carrying. The caveat that keeps the
-  audit trigger: it was measured **without bound params**, and the reported
-  failure mode is specifically multi-statement *plus* a shared `params` array —
-  which is the case every real write falls into. Rule 5 now states both cases
-  and assumes the pessimistic one where it is unsettled.
+### Pivot to a Worker stack, and Phase 1 (LCSC import)
 
-- **`rows_written` counts index writes, roughly 4× (P4).** One
-  `UPDATE parts` reported `rows_written = 4`; inserting two rows reported 8. So
-  "a 2,000-row import is 2% of the daily cap" was wrong by that factor — it is
-  nearer 8%. Still comfortable, but the multiplier is now written down where a
-  bulk operation will be planned, and the `parts_audit_update` trigger's own row
-  is part of it.
+- **Replaced the Python/PySide6/REST-client design** with one Cloudflare Worker
+  (Hono, TypeScript strict), D1 bindings and a React UI. See `docs/worker-pivot.md`.
+- **`0002_worker_schema.sql`** replaces the Phase-0 ledger tables (destructive;
+  both databases were empty). `stock_moves` is append-only by trigger;
+  `lots.qty_on_hand` is a cache recomputed from `SUM(delta)`, never incremented.
+  Lot cost is micro-IDR rather than whole IDR (tiny parts would round badly).
+- **`POST /api/import/lcsc`**: RFC 4180 parser, manufacturer normalisation
+  (`DIODES` = `Diodes Incorporated`), category/value guesses, pure plan, one
+  atomic idempotent batch. The two real exports give 99 parts, 100 lots, 100
+  receive moves; re-importing changes nothing. A 100-line import writes ~1,300 rows.
+- Cloudflare Access JWT verification that fails closed; per-request D1 usage
+  metering into `usage_daily` and `/api/usage`.
+- **`0003_sheet_vocabulary.sql`**: adopts the owner's 20 `Group - Name` categories and the original
+  sheet's USD to IDR rate (17,893). The importer's LCSC stock value matches the sheet's (tested).
+- **Import page** (`src/web`): choose the CSV, correct order number/date/FX/shipping, preview, apply.
+  Apply is disabled once the form changes after a preview, and for a file already fully imported.
+- Migrations 0002 and 0003 applied to production and staging (both empty beforehand).
+- 39 tests against a real local D1 built from the shipped migrations.
 
-- **`rows_read` really is rows scanned (P9).** 20 parts + 200 events = 220 rows;
-  the full stock aggregate reported `rows_read = 239`. Metering is proportional
-  to table size, which makes Rule 4's budget — and therefore the case for
-  `stock_checkpoints` — measured rather than estimated.
+### Earlier (Phase 0, Python design — superseded)
 
-- Confirmed on the real database rather than only the local engine: `json_each`
-  preserves types (`typeof` → `integer`), the `AFTER UPDATE` trigger fires, and
-  `seq` really does skip a number on an ignored insert (202 rows, `max_seq`
-  203).
-
-### Phase 0 — the REST probes, and a correction
-
-With the API token in place, the last three probes ran against the raw endpoint.
-One of them corrected this project's own documentation.
-
-- **Bound parameters are properly typed (P1).** `2100` comes back as
-  `typeof=integer`, `'2100'` as `text`, `1.5` as `real`, and `SUM` over bound
-  integers returns `3000` as an `integer`. The REST documentation describes
-  `params` as "an array of strings", which is misleading. **Micro-USD amounts are
-  safe as plain bound parameters**, so the `json_each(?)` shape is now a
-  *performance* choice for bulk inserts rather than a correctness requirement —
-  which removes a worry from the import design.
-
-- **Multi-statement with a shared `params` array is rejected outright (P3b)** —
-  HTTP 400, code 7400, *"params with multiple statements is not supported"*.
-  Since every write this tool makes carries user data and therefore uses bound
-  parameters, **one parameterised statement per request is the only atomic unit
-  available**. That is now settled rather than cautiously assumed, and it is the
-  measured justification for writing the audit row from a trigger.
-
-- **Fixed: a SQL error returns HTTP 400, not 200.** `AGENTS.md` asserted that
-  *"HTTP 200 is not success — the API returns 200 with `success: false` for a SQL
-  error"*. **It does not.** That claim arrived via a design review and was
-  written down without being verified. Measured taxonomy: bad token → **401**
-  / code 10000; malformed request → **400** / 7400; SQL error and constraint
-  violation → **400** / 7500; unknown database → **404** / 7404.
-
-  So distinct conditions **share HTTP 400**, which means classification must key
-  on `errors[].code` and never on the status — the same conclusion the wrong
-  claim was reaching for, but for the real reason. The defensible half survives:
-  the body carries an outer `success` *and* a per-statement `success`, and
-  `errors[0].message` is the only text worth showing a user.
-
-- **The wire bodies are committed** as `tests/fixtures/d1_responses.json`, with
-  12 tests pinning them (`tests/test_d1_fixtures.py`) so the phase-1 Store has a
-  fixed target and a Cloudflare response-shape change fails loudly. Among them a
-  guard that no fixture contains a credential, because a fixture is exactly the
-  kind of file that ends up pasted into an issue. Also noted from `meta`:
-  **`total_attempts` shows D1 retries internally**, which is worth knowing before
-  layering another retry on top.
-
-- Only the **daily-limit** body remains uncaptured; it cannot be obtained without
-  deliberately burning the account's 100,000 daily write budget. Handled
-  generically, and the fixture file says to capture it if it is ever seen.
-
-33 tests, still entirely offline.
+The original design notes remain in git history (`kicad-partlib-plan.md`).

@@ -1,0 +1,100 @@
+{
+ "fetchedAt": "2026-10-06T06:12:47.284Z",
+ "status": "ok",
+ "productCode": "C42422055",
+ "productModel": "NE5532-TD",
+ "brand": "TDSEMIC",
+ "catalog": "Instrumentation, Op Amps, Buffer Amps",
+ "parentCatalog": "Amplifiers/Comparators",
+ "catalogPath": [
+  "Integrated Circuits (ICs)",
+  "Linear",
+  "Amplifiers"
+ ],
+ "package": "SOP-8",
+ "intro": "Standard (General Purpose) Amplifier 2 Circuit SOP-8",
+ "desc": "Standard (General Purpose) Amplifier 2 Circuit SOP-8",
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/9d393d52589c677ff8e698c5937cde41.pdf?productCode=C42422055",
+ "params": [
+  {
+   "name": "Output Current",
+   "value": "-",
+   "number": null
+  },
+  {
+   "name": "Number of Channels",
+   "value": "2",
+   "number": -1
+  },
+  {
+   "name": "Vos - Input Offset Voltage",
+   "value": "500uV",
+   "number": 0.0005
+  },
+  {
+   "name": "Slew Rate",
+   "value": "11V/us",
+   "number": 11
+  },
+  {
+   "name": "Input Offset Current(Ios)",
+   "value": "5nA",
+   "number": 5e-9
+  },
+  {
+   "name": "Operating Temperature",
+   "value": "0℃~+70℃",
+   "number": null
+  },
+  {
+   "name": "Common Mode Rejection Ratio(CMRR)",
+   "value": "100dB",
+   "number": 100
+  },
+  {
+   "name": "Ib - Input Bias Current",
+   "value": "30nA",
+   "number": 3e-8
+  },
+  {
+   "name": "Input Offset Voltage Drift(Vos TC)",
+   "value": "-",
+   "number": null
+  },
+  {
+   "name": "Quiescent Current",
+   "value": "5.5mA",
+   "number": 0.0055
+  },
+  {
+   "name": "Gain Bandwidth Product",
+   "value": "10MHz",
+   "number": 10000000
+  },
+  {
+   "name": "Features",
+   "value": "Built-in compensation",
+   "number": -1
+  },
+  {
+   "name": "Input Voltage Noise Density",
+   "value": "8nV/√Hz@1kHz",
+   "number": 8
+  },
+  {
+   "name": "Rail to Rail",
+   "value": "-",
+   "number": -1
+  },
+  {
+   "name": "Dual Supply",
+   "value": "-15V~15V",
+   "number": null
+  },
+  {
+   "name": "Single Supply",
+   "value": "-",
+   "number": null
+  }
+ ]
+}

@@ -14,3 +14,6 @@
 *.toml      text eol=lf
 *.json      text eol=lf
 *.yml       text eol=lf
+
+# The LCSC fixtures are real exports (CRLF); keep their bytes exactly.
+tests/fixtures/lcsc/*.csv -text

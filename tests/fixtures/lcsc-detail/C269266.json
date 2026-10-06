@@ -1,0 +1,90 @@
+{
+ "fetchedAt": "2026-10-06T06:12:10.121Z",
+ "status": "ok",
+ "productCode": "C269266",
+ "productModel": "AON7410",
+ "brand": "AOS",
+ "catalog": "Single FETs, MOSFETs",
+ "parentCatalog": "Transistors/Thyristors",
+ "catalogPath": [
+  "Discrete Semiconductors",
+  "Transistors",
+  "FETs, MOSFETs"
+ ],
+ "package": "DFN-8(3x3)",
+ "intro": "N-Channel 30V 50A Surface Mount DFN-8(3x3)",
+ "desc": "N-Channel 30V 50A Surface Mount DFN-8(3x3)",
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/4b7d54954d4c3ad63c6a43bd4902ecd7.pdf?productCode=C269266",
+ "params": [
+  {
+   "name": "Output Capacitance(Coss)",
+   "value": "143pF",
+   "number": 143
+  },
+  {
+   "name": "Ciss-Input Capacitance",
+   "value": "660pF",
+   "number": 660
+  },
+  {
+   "name": "Pd - Power Dissipation",
+   "value": "20W",
+   "number": 20
+  },
+  {
+   "name": "Configuration",
+   "value": "-",
+   "number": -1
+  },
+  {
+   "name": "Operating Temperature",
+   "value": "-55℃~+150℃",
+   "number": null
+  },
+  {
+   "name": "Drain to Source Voltage",
+   "value": "30V",
+   "number": 30
+  },
+  {
+   "name": "Current - Continuous Drain(Id)",
+   "value": "50A",
+   "number": 50
+  },
+  {
+   "name": "Reverse Transfer Capacitance (Crss)",
+   "value": "77pF",
+   "number": 77
+  },
+  {
+   "name": "RDS(on)",
+   "value": "20mΩ@10V",
+   "number": 0.02
+  },
+  {
+   "name": "Number",
+   "value": "1 N-channel",
+   "number": -1
+  },
+  {
+   "name": "Gate Charge(Qg)",
+   "value": "12nC@10V",
+   "number": 1.2e-8
+  },
+  {
+   "name": "Vgs",
+   "value": "±20V",
+   "number": null
+  },
+  {
+   "name": "Gate Threshold Voltage (Vgs(th))",
+   "value": "2.5V",
+   "number": 2.5
+  },
+  {
+   "name": "Type",
+   "value": "N-Channel",
+   "number": -1
+  }
+ ]
+}

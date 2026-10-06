@@ -1,0 +1,54 @@
+{
+ "fetchedAt": "2026-10-06T06:12:42.621Z",
+ "status": "ok",
+ "productCode": "C365284",
+ "productModel": "HPCR0805F300RK9",
+ "brand": "RESI",
+ "catalog": "Chip Resistor - Surface Mount",
+ "parentCatalog": "Resistors",
+ "catalogPath": [
+  "Passives",
+  "Resistors"
+ ],
+ "package": "0805",
+ "intro": "300Ω 250mW 150V Thick Film Resistor ±100ppm/℃ ±1% 0805 Chip Resistor - Surface Mount RoHS",
+ "desc": null,
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/beeb46c55a0364f1c303ace07887f938.pdf?productCode=C365284",
+ "params": [
+  {
+   "name": "Resistance",
+   "value": "300Ω",
+   "number": 300
+  },
+  {
+   "name": "Power(Watts)",
+   "value": "250mW",
+   "number": 0.25
+  },
+  {
+   "name": "Voltage Rating",
+   "value": "150V",
+   "number": 150
+  },
+  {
+   "name": "Operating Temperature",
+   "value": "-55℃~+125℃",
+   "number": null
+  },
+  {
+   "name": "Type",
+   "value": "Thick Film Resistor",
+   "number": -1
+  },
+  {
+   "name": "Temperature Coefficient",
+   "value": "±100ppm/℃",
+   "number": null
+  },
+  {
+   "name": "Tolerance",
+   "value": "±1%",
+   "number": null
+  }
+ ]
+}

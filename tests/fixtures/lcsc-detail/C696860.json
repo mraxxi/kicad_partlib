@@ -1,0 +1,39 @@
+{
+ "fetchedAt": "2026-10-06T06:12:59.625Z",
+ "status": "ok",
+ "productCode": "C696860",
+ "productModel": "TCC0603X7R473M500CT",
+ "brand": "CCTC",
+ "catalog": "Ceramic Capacitors",
+ "parentCatalog": "Capacitors",
+ "catalogPath": [
+  "Passives",
+  "Capacitors"
+ ],
+ "package": "0603",
+ "intro": "47nF ±20% 50V Ceramic Capacitor X7R 0603",
+ "desc": "47nF ±20% 50V Ceramic Capacitor X7R 0603",
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/960fc76f20dcdbc93ff4d1e2164767dc.pdf?productCode=C696860",
+ "params": [
+  {
+   "name": "Capacitance",
+   "value": "47nF",
+   "number": 47000
+  },
+  {
+   "name": "Temperature Coefficient",
+   "value": "X7R",
+   "number": -1
+  },
+  {
+   "name": "Tolerance",
+   "value": "±20%",
+   "number": null
+  },
+  {
+   "name": "Voltage Rating",
+   "value": "50V",
+   "number": 50
+  }
+ ]
+}

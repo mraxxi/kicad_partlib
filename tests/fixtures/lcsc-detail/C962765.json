@@ -1,0 +1,70 @@
+{
+ "fetchedAt": "2026-10-06T06:13:07.305Z",
+ "status": "ok",
+ "productCode": "C962765",
+ "productModel": "SKQ05P10AD",
+ "brand": "Shikues",
+ "catalog": "Single FETs, MOSFETs",
+ "parentCatalog": "Transistors/Thyristors",
+ "catalogPath": [
+  "Discrete Semiconductors",
+  "Transistors",
+  "FETs, MOSFETs"
+ ],
+ "package": "DFN-8L(5x6)",
+ "intro": "P-Channel 100V 5A Surface Mount DFN-8L(5x6)",
+ "desc": "P-Channel 100V 5A Surface Mount DFN-8L(5x6)",
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/e0e8f6d919ceb0ecb7e182e194cd4e8c.pdf?productCode=C962765",
+ "params": [
+  {
+   "name": "Drain to Source Voltage",
+   "value": "100V",
+   "number": 100
+  },
+  {
+   "name": "Operating Temperature",
+   "value": "-50℃~+150℃",
+   "number": null
+  },
+  {
+   "name": "Current - Continuous Drain(Id)",
+   "value": "5A",
+   "number": 5
+  },
+  {
+   "name": "Pd - Power Dissipation",
+   "value": "-",
+   "number": null
+  },
+  {
+   "name": "RDS(on)",
+   "value": "220mΩ@4.5V",
+   "number": 0.22
+  },
+  {
+   "name": "Number",
+   "value": "1 P-Channel",
+   "number": -1
+  },
+  {
+   "name": "Gate Charge(Qg)",
+   "value": "-",
+   "number": null
+  },
+  {
+   "name": "Vgs",
+   "value": "±20V",
+   "number": null
+  },
+  {
+   "name": "Gate Threshold Voltage (Vgs(th))",
+   "value": "2.5V",
+   "number": 2.5
+  },
+  {
+   "name": "Type",
+   "value": "P-Channel",
+   "number": -1
+  }
+ ]
+}

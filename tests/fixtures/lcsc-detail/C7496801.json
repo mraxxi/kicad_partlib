@@ -1,0 +1,93 @@
+{
+ "fetchedAt": "2026-10-06T06:13:03.171Z",
+ "status": "ok",
+ "productCode": "C7496801",
+ "productModel": "F.0402.00001/P2-0402G1TS2-045T-001",
+ "brand": "TUOZHAN",
+ "catalog": "LED Indication - Discrete",
+ "parentCatalog": "Optoelectronics",
+ "catalogPath": [
+  "Optoelectronics"
+ ],
+ "package": "0402",
+ "intro": "Emerald Green 513nm LED Indication - Discrete 2.6V~3V 0402",
+ "desc": "Emerald Green 513nm LED Indication - Discrete 2.6V~3V 0402",
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/9578f2c24336672e2c56aef75e26d6fe.pdf?productCode=C7496801",
+ "params": [
+  {
+   "name": "Half wave width",
+   "value": "27nm",
+   "number": 0.000027
+  },
+  {
+   "name": "Forward Current",
+   "value": "5mA",
+   "number": 0.005
+  },
+  {
+   "name": "Operating Temperature",
+   "value": "-40℃~+85℃",
+   "number": null
+  },
+  {
+   "name": "Voltage - Forward(Vf)",
+   "value": "2.6V~3V",
+   "number": null
+  },
+  {
+   "name": "Diode Configuration",
+   "value": "Discrete Diode",
+   "number": -1
+  },
+  {
+   "name": "ESD Withstand Voltage",
+   "value": "2500V",
+   "number": -1
+  },
+  {
+   "name": "Installation method",
+   "value": "-",
+   "number": -1
+  },
+  {
+   "name": "Color Temperature",
+   "value": "-",
+   "number": null
+  },
+  {
+   "name": "Peak Wavelength",
+   "value": "513nm",
+   "number": null
+  },
+  {
+   "name": "Lens Color",
+   "value": "Water Clear",
+   "number": -1
+  },
+  {
+   "name": "Viewing Angle",
+   "value": "120°",
+   "number": -1
+  },
+  {
+   "name": "Luminous Intensity",
+   "value": "350mcd",
+   "number": null
+  },
+  {
+   "name": "Illumination Color",
+   "value": "Emerald Green",
+   "number": -1
+  },
+  {
+   "name": "Lamp Holder Type",
+   "value": "-",
+   "number": -1
+  },
+  {
+   "name": "Wavelength",
+   "value": "510nm~530nm",
+   "number": null
+  }
+ ]
+}

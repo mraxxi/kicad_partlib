@@ -1,0 +1,31 @@
+// Production by default; `--env staging` targets kicad-partlib-staging.
+// database_id values are identifiers, not credentials.
+{
+  "name": "kicad-partlib",
+  "main": "src/worker/index.ts",
+  "compatibility_date": "2026-08-22",
+  "assets": { "directory": "./public", "not_found_handling": "single-page-application", "run_worker_first": ["/api/*"] },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "kicad-partlib",
+      "database_id": "4f78a0b2-72b6-4b09-ab45-0272a0e08b9d",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "vars": { "ACCESS_TEAM_DOMAIN": "pmandiri.cloudflareaccess.com", "ACCESS_AUD": "91596b337fa04ee846b3f8201ee129fae9640b267ba63ba8fc064676c708d99d" },
+  "env": {
+    "staging": {
+      "name": "kicad-partlib-staging",
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "kicad-partlib-staging",
+          "database_id": "5ba4e898-3277-4331-8ad7-827bac9ef522",
+          "migrations_dir": "migrations"
+        }
+      ],
+      "vars": { "ACCESS_TEAM_DOMAIN": "pmandiri.cloudflareaccess.com", "ACCESS_AUD": "" }
+    }
+  }
+}

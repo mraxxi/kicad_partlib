@@ -1,0 +1,75 @@
+{
+ "fetchedAt": "2026-10-06T06:13:05.529Z",
+ "status": "ok",
+ "productCode": "C7543823",
+ "productModel": "50N04F",
+ "brand": "HL",
+ "catalog": "Single FETs, MOSFETs",
+ "parentCatalog": "Transistors/Thyristors",
+ "catalogPath": [
+  "Discrete Semiconductors",
+  "Transistors",
+  "FETs, MOSFETs"
+ ],
+ "package": "DFN-8(5x6)",
+ "intro": "N-Channel 40V 45A Surface Mount DFN-8(5x6)",
+ "desc": "N-Channel 40V 45A Surface Mount DFN-8(5x6)",
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/246bed1b26a12d943e1d7fe362655358.pdf?productCode=C7543823",
+ "params": [
+  {
+   "name": "Operating Temperature",
+   "value": "-55℃~+150℃",
+   "number": null
+  },
+  {
+   "name": "Drain to Source Voltage",
+   "value": "40V",
+   "number": 40
+  },
+  {
+   "name": "Output Capacitance(Coss)",
+   "value": "109pF",
+   "number": 109
+  },
+  {
+   "name": "Current - Continuous Drain(Id)",
+   "value": "45A",
+   "number": 45
+  },
+  {
+   "name": "Ciss-Input Capacitance",
+   "value": "964pF",
+   "number": 964
+  },
+  {
+   "name": "Reverse Transfer Capacitance (Crss)",
+   "value": "96pF",
+   "number": 96
+  },
+  {
+   "name": "RDS(on)",
+   "value": "11mΩ",
+   "number": 0.011
+  },
+  {
+   "name": "Number",
+   "value": "1 N-channel",
+   "number": -1
+  },
+  {
+   "name": "Gate Charge(Qg)",
+   "value": "22.9nC@10V",
+   "number": 2.29e-8
+  },
+  {
+   "name": "Gate Threshold Voltage (Vgs(th))",
+   "value": "2V",
+   "number": 2
+  },
+  {
+   "name": "Type",
+   "value": "N-Channel",
+   "number": -1
+  }
+ ]
+}

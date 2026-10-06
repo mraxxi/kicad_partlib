@@ -1,0 +1,69 @@
+{
+ "fetchedAt": "2026-10-06T06:12:09.503Z",
+ "status": "ok",
+ "productCode": "C242129",
+ "productModel": "EEEFTH100UAR",
+ "brand": "PANASONIC",
+ "catalog": "Aluminum Electrolytic Capacitors",
+ "parentCatalog": "Capacitors",
+ "catalogPath": [
+  "Passives",
+  "Capacitors"
+ ],
+ "package": "SMD,D4xL5.8mm",
+ "intro": "10uF ±20% 50V Aluminum Electrolytic Capacitors 2000hrs@105℃",
+ "desc": "10uF ±20% 50V Aluminum Electrolytic Capacitors 2000hrs@105℃",
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/d9e4f5b2148bb5d2bba9f452eb2fb069.pdf?productCode=C242129",
+ "params": [
+  {
+   "name": "Tolerance",
+   "value": "±20%",
+   "number": null
+  },
+  {
+   "name": "Voltage Rating",
+   "value": "50V",
+   "number": 50
+  },
+  {
+   "name": "Lifetime",
+   "value": "2000hrs@105℃",
+   "number": 2000
+  },
+  {
+   "name": "Capacitance",
+   "value": "10uF",
+   "number": 10000000
+  },
+  {
+   "name": "Ripple Current",
+   "value": "85mA@100kHz",
+   "number": 0.085
+  },
+  {
+   "name": "Polarity type",
+   "value": "Polarized",
+   "number": -1
+  },
+  {
+   "name": "Operating Temperature",
+   "value": "-55℃~+105℃",
+   "number": null
+  },
+  {
+   "name": "Equivalent Series Resistance(ESR)",
+   "value": "2.3Ω@100kHz",
+   "number": 2.3
+  },
+  {
+   "name": "Height - Seated (Max)",
+   "value": "6.1mm",
+   "number": 6.1
+  },
+  {
+   "name": "Diameter",
+   "value": "4mm",
+   "number": 4
+  }
+ ]
+}

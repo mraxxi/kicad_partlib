@@ -1,0 +1,74 @@
+{
+ "fetchedAt": "2026-10-06T06:12:02.937Z",
+ "status": "ok",
+ "productCode": "C107671",
+ "productModel": "PCM5102APWR",
+ "brand": "TI",
+ "catalog": "ADCs/DACs - Special Purpose",
+ "parentCatalog": "Data Acquisition",
+ "catalogPath": [
+  "Integrated Circuits (ICs)",
+  "Data Acquisition"
+ ],
+ "package": "TSSOP-20",
+ "intro": "2 I2S 1.8V~3.3V TSSOP-20 ADCs/DACs - Special Purpose RoHS",
+ "desc": null,
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/427cb50cd71d4fa092a8afe7bc909457.pdf?productCode=C107671",
+ "params": [
+  {
+   "name": "Features",
+   "value": "Digital filtering;Power-down mode",
+   "number": null
+  },
+  {
+   "name": "Number of Channels",
+   "value": "2",
+   "number": 2
+  },
+  {
+   "name": "Operating Temperature",
+   "value": "-25℃~+85℃",
+   "number": null
+  },
+  {
+   "name": "Interface",
+   "value": "I2S",
+   "number": -1
+  },
+  {
+   "name": "ChipType",
+   "value": "Audio Decoder",
+   "number": -1
+  },
+  {
+   "name": "DNL (LSB)",
+   "value": "-",
+   "number": null
+  },
+  {
+   "name": "Voltage - Supply",
+   "value": "1.8V~3.3V",
+   "number": null
+  },
+  {
+   "name": "Quiescent Current",
+   "value": "500uA",
+   "number": 0.0005
+  },
+  {
+   "name": "Integral non - linearity",
+   "value": "-",
+   "number": null
+  },
+  {
+   "name": "ADC architecture",
+   "value": "-",
+   "number": -1
+  },
+  {
+   "name": "Resolution (Bits)",
+   "value": "32;384kHz",
+   "number": null
+  }
+ ]
+}

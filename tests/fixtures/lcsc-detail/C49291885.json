@@ -1,0 +1,84 @@
+{
+ "fetchedAt": "2026-10-06T06:12:51.989Z",
+ "status": "ok",
+ "productCode": "C49291885",
+ "productModel": "C50126V-4P0G56",
+ "brand": "JXTCONN",
+ "catalog": "Wire to Board",
+ "parentCatalog": "Connectors",
+ "catalogPath": [
+  "Connectors, Interconnects",
+  "Terminal Blocks"
+ ],
+ "package": "Through Hole,P=5mm",
+ "intro": "0.5~2.5 18A -40℃~+105℃ 250V 1x4P Green 14~26 Through Hole 4 1 5mm Through Hole,P=5mm Wire to Board ",
+ "desc": null,
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/1f19c3d1877a75f97b435106645b3842.pdf?productCode=C49291885",
+ "params": [
+  {
+   "name": "Wire Gauge - mm2",
+   "value": "0.5~2.5",
+   "number": -1
+  },
+  {
+   "name": "Current Rating",
+   "value": "18A",
+   "number": 18
+  },
+  {
+   "name": "Operating Temperature",
+   "value": "-40℃~+105℃",
+   "number": null
+  },
+  {
+   "name": "Voltage Rating (Max)",
+   "value": "250V",
+   "number": 250
+  },
+  {
+   "name": "Number of Positions or Pins",
+   "value": "1x4P",
+   "number": -1
+  },
+  {
+   "name": "Height Above Board",
+   "value": "10.9mm",
+   "number": 10.9
+  },
+  {
+   "name": "Color",
+   "value": "Green",
+   "number": -1
+  },
+  {
+   "name": "Number of Pins",
+   "value": "4P",
+   "number": -1
+  },
+  {
+   "name": "Wire Gauge - AWG",
+   "value": "14~26",
+   "number": -1
+  },
+  {
+   "name": "Mounting Type",
+   "value": "Through Hole",
+   "number": -1
+  },
+  {
+   "name": "Number of PINs Per Row",
+   "value": "4",
+   "number": 4
+  },
+  {
+   "name": "Number of Rows",
+   "value": "1",
+   "number": 1
+  },
+  {
+   "name": "Pitch",
+   "value": "5mm",
+   "number": 5
+  }
+ ]
+}

@@ -1,0 +1,100 @@
+{
+ "fetchedAt": "2026-10-06T06:13:02.006Z",
+ "status": "ok",
+ "productCode": "C7426",
+ "productModel": "NE5532DR",
+ "brand": "TI",
+ "catalog": "Instrumentation, Op Amps, Buffer Amps",
+ "parentCatalog": "Amplifiers/Comparators",
+ "catalogPath": [
+  "Integrated Circuits (ICs)",
+  "Linear",
+  "Amplifiers"
+ ],
+ "package": "SOIC-8",
+ "intro": "38mA 2 500uV 9V/us 100dB 1uA 16mA 10MHz SOIC-8 Instrumentation, Op Amps, Buffer Amps RoHS",
+ "desc": null,
+ "datasheet": "https://datasheet.lcsc.com/datasheet/pdf/b87bff46a57243bf94b623c52737c5cd.pdf?productCode=C7426",
+ "params": [
+  {
+   "name": "Output Current",
+   "value": "38mA",
+   "number": 0.038
+  },
+  {
+   "name": "Number of Channels",
+   "value": "2",
+   "number": -1
+  },
+  {
+   "name": "Vos - Input Offset Voltage",
+   "value": "500uV",
+   "number": 0.0005
+  },
+  {
+   "name": "Slew Rate",
+   "value": "9V/us",
+   "number": 9
+  },
+  {
+   "name": "Input Offset Current(Ios)",
+   "value": "10nA",
+   "number": 1e-8
+  },
+  {
+   "name": "Operating Temperature",
+   "value": "0℃~+70℃",
+   "number": null
+  },
+  {
+   "name": "Common Mode Rejection Ratio(CMRR)",
+   "value": "100dB",
+   "number": 100
+  },
+  {
+   "name": "Ib - Input Bias Current",
+   "value": "1uA",
+   "number": 0.000001
+  },
+  {
+   "name": "Input Offset Voltage Drift(Vos TC)",
+   "value": "5uV/℃",
+   "number": null
+  },
+  {
+   "name": "Quiescent Current",
+   "value": "16mA",
+   "number": 0.016
+  },
+  {
+   "name": "Gain Bandwidth Product",
+   "value": "10MHz",
+   "number": 10000000
+  },
+  {
+   "name": "Features",
+   "value": "Built-in compensation",
+   "number": -1
+  },
+  {
+   "name": "Input Voltage Noise Density",
+   "value": "5nV/√Hz@1kHz",
+   "number": 5
+  },
+  {
+   "name": "Rail to Rail",
+   "value": "-",
+   "number": -1
+  },
+  {
+   "name": "Dual Supply",
+   "value": "-15V~15V",
+   "number": null
+  },
+  {
+   "name": "Single Supply",
+   "value": "-",
+   "number": null
+  }
+ ]
+}
