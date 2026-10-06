@@ -6,25 +6,29 @@ import { fetchLcsc, type LcscFetcher } from './lcsc';
 import { validate as zValidator } from './validate';
 
 /**
- * Part images (docs/part-images.md). The Worker only ferries bytes; it never decodes or resizes an image (10 ms CPU).
- *   source  -> asks LCSC for the part's first image URL      (writes nothing)
- *   proxy   -> streams LCSC's image to the browser            (LCSC's image host sends no CORS headers, so the
- *                                                              browser cannot read it directly to downscale it)
- *   PUT     -> stores the small image the browser made        (the only write; idempotent: a part has one image)
- *   GET     -> serves it with an ETag, so a revisit costs a 304
+ * Part images (docs/part-images.md). LCSC publishes each picture at several sizes, so the Worker simply downloads
+ * the smallest one (96x96, about 3 KB) and stores the bytes as they are: nothing is decoded or resized, which keeps
+ * a request far under the 10 ms CPU limit.
+ *   POST /images/fetch  asks LCSC for each part's FIRST image and stores it (the only write; one row per part, a
+ *                       repeat replaces it, so retrying is harmless)
+ *   GET  /parts/:id/image serves it with an ETag, so a revisit costs a 304
+ *   GET  /images/pending  lists what is still missing (reads only)
  */
 const id = z.coerce.number().int().positive();
-const MAX_SOURCE_BYTES = 2 * 1024 * 1024;
+// Each part costs 2 subrequests (LCSC's record, then the picture); 50 is the limit per request, so 10 parts is 20.
+const MAX_PARTS = 10;
+const CONCURRENCY = 3;
 export type ImageFetcher = (url: string) => Promise<Response>;
 const defaultImageFetch: ImageFetcher = (url) => fetch(url, { headers: { 'user-agent': 'Mozilla/5.0 (kicad_partlib)' }, signal: AbortSignal.timeout(8000) });
+
+type Outcome = { partId: number; status: 'stored' | 'no_c_number' | 'not_listed' | 'no_image' | 'error'; bytes?: number; message?: string };
 
 export function imageRoutes(deps: { lcscFetch?: LcscFetcher; imageFetch?: ImageFetcher } = {}) {
   const lcscFetch = deps.lcscFetch ?? fetchLcsc;
   const imageFetch = deps.imageFetch ?? defaultImageFetch;
   const r = new Hono<{ Bindings: AppEnv; Variables: Vars }>();
 
-  // Parts that have a C-number and no image yet: what "fetch images" should visit. Index-backed: the part table scan
-  // is bounded by LIMIT and the image lookup is a primary-key probe.
+  // Parts with a C-number and no image yet. The part scan is bounded by LIMIT; the image check is a primary-key probe.
   r.get('/images/pending', async (c) => {
     const parts = await c.get('meter').all<{ id: number; lcsc_code: string }>(c.env.DB.prepare(
       `SELECT p.id, p.lcsc_code FROM parts p WHERE p.lcsc_code IS NOT NULL AND p.lcsc_code <> ''
@@ -32,48 +36,42 @@ export function imageRoutes(deps: { lcscFetch?: LcscFetcher; imageFetch?: ImageF
     return c.json({ parts: parts.map((p) => ({ partId: p.id, code: p.lcsc_code })) });
   });
 
-  r.post('/parts/:id/image/source', zValidator('param', z.object({ id })), async (c) => {
-    const row = (await c.get('meter').all<{ lcsc_code: string | null }>(c.env.DB.prepare('SELECT lcsc_code FROM parts WHERE id = ?').bind(c.req.valid('param').id)))[0];
-    if (!row) return c.json({ error: 'That part does not exist.' }, 404);
-    if (!row.lcsc_code) return c.json({ error: 'This part has no LCSC part number, so there is no LCSC image to fetch.' }, 422);
-    const res = await lcscFetch(row.lcsc_code);
-    if (res.status === 'error') return c.json({ error: res.message }, 502);
-    if (res.status === 'not_listed') return c.json({ error: 'LCSC no longer lists this part, so it has no image to fetch.' }, 404);
-    if (!res.detail.image) return c.json({ error: 'LCSC lists this part without an image.' }, 404);
-    return c.json({ url: res.detail.image });
-  });
-
-  r.get('/image-proxy', zValidator('query', z.object({ url: z.string().max(500) })), async (c) => {
-    const url = c.req.valid('query').url;
-    if (!isAllowedImageUrl(url)) return c.json({ error: 'Only images on LCSC’s own image host can be fetched.' }, 400);
+  async function smallestImage(url: string): Promise<{ bytes: Uint8Array; url: string } | string> {
+    let why = 'LCSC did not return an image for this part.';
     for (const candidate of imageCandidates(url)) {
       let res: Response;
-      try { res = await imageFetch(candidate); } catch { continue; }
-      const type = res.headers.get('content-type') ?? '';
+      try { res = await imageFetch(candidate); } catch { why = 'Could not reach LCSC’s image server.'; continue; }
       const len = Number(res.headers.get('content-length') ?? 0);
-      if (!res.ok || !type.startsWith('image/') || len > MAX_SOURCE_BYTES) { await res.body?.cancel(); continue; }
-      return new Response(res.body, { headers: { 'content-type': type, 'cache-control': 'private, max-age=3600' } });
+      if (!res.ok || len > MAX_IMAGE_BYTES) { await res.body?.cancel(); continue; }
+      const bytes = new Uint8Array(await res.arrayBuffer());
+      if (bytes.length > 0 && bytes.length <= MAX_IMAGE_BYTES && sniffImage(bytes)) return { bytes, url: candidate };
     }
-    return c.json({ error: 'LCSC did not return an image for this part.' }, 502);
-  });
+    return why;
+  }
 
-  r.put('/parts/:id/image', zValidator('param', z.object({ id })), zValidator('query', z.object({ src: z.string().max(500).optional() })), async (c) => {
-    const partId = c.req.valid('param').id;
-    const bytes = new Uint8Array(await c.req.arrayBuffer());
-    if (bytes.length === 0 || bytes.length > MAX_IMAGE_BYTES) return c.json({ error: `A part image must be between 1 byte and ${MAX_IMAGE_BYTES / 1024} KB; downscale it first.` }, 413);
-    const mime = sniffImage(bytes);
-    if (!mime) return c.json({ error: 'That is not a WebP, JPEG or PNG image.' }, 415);
-    const src = c.req.valid('query').src;
+  r.post('/images/fetch', zValidator('json', z.object({ partIds: z.array(z.number().int().positive()).min(1).max(MAX_PARTS) })), async (c) => {
     const meter = c.get('meter');
-    const exists = (await meter.all<{ id: number }>(c.env.DB.prepare('SELECT id FROM parts WHERE id = ?').bind(partId)))[0];
-    if (!exists) return c.json({ error: 'That part does not exist.' }, 404);
+    const parts = await meter.all<{ id: number; lcsc_code: string | null }>(
+      c.env.DB.prepare('SELECT id, lcsc_code FROM parts WHERE id IN (SELECT value FROM json_each(?))').bind(JSON.stringify(c.req.valid('json').partIds)));
     const at = new Date().toISOString();
-    const w = await c.env.DB.prepare(
-      `INSERT INTO part_images(part_id, mime, bytes, src_url, fetched_at) VALUES (?1, ?2, ?3, ?4, ?5)
-       ON CONFLICT(part_id) DO UPDATE SET mime = ?2, bytes = ?3, src_url = ?4, fetched_at = ?5`,
-    ).bind(partId, mime, bytes, src && isAllowedImageUrl(src) ? src : null, at).run();
-    meter.add(w);
-    return c.json({ ok: true, bytes: bytes.length, version: at });
+    const one = async (p: { id: number; lcsc_code: string | null }): Promise<Outcome> => {
+      if (!p.lcsc_code) return { partId: p.id, status: 'no_c_number' };
+      const rec = await lcscFetch(p.lcsc_code);
+      if (rec.status === 'error') return { partId: p.id, status: 'error', message: rec.message };
+      if (rec.status === 'not_listed') return { partId: p.id, status: 'not_listed' };
+      if (!rec.detail.image || !isAllowedImageUrl(rec.detail.image)) return { partId: p.id, status: 'no_image' };
+      const got = await smallestImage(rec.detail.image);
+      if (typeof got === 'string') return { partId: p.id, status: 'error', message: got };
+      const mime = sniffImage(got.bytes)!;
+      meter.add(await c.env.DB.prepare(
+        `INSERT INTO part_images(part_id, mime, bytes, src_url, fetched_at) VALUES (?1, ?2, ?3, ?4, ?5)
+         ON CONFLICT(part_id) DO UPDATE SET mime = ?2, bytes = ?3, src_url = ?4, fetched_at = ?5`,
+      ).bind(p.id, mime, got.bytes, got.url, at).run());
+      return { partId: p.id, status: 'stored', bytes: got.bytes.length };
+    };
+    const results: Outcome[] = [];
+    for (let i = 0; i < parts.length; i += CONCURRENCY) results.push(...(await Promise.all(parts.slice(i, i + CONCURRENCY).map(one))));
+    return c.json({ results });
   });
 
   r.get('/parts/:id/image', zValidator('param', z.object({ id })), async (c) => {

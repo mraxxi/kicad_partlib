@@ -9,6 +9,7 @@ import { FILES, count, importLcsc, reset } from './helpers';
 
 const IMG = 'https://assets.lcsc.com/images/lcsc/900x900/20230101_AON7410_C269266_front.jpg';
 const WEBP = Uint8Array.from([0x52, 0x49, 0x46, 0x46, 4, 0, 0, 0, 0x57, 0x45, 0x42, 0x50, 1, 2, 3, 4]);
+const JPEG = Uint8Array.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3, 4, 5, 6]);
 
 const asked: string[] = [];
 let NO_IMAGE = '';
@@ -18,18 +19,19 @@ const fakeLcsc: LcscFetcher = async (code) => {
   return { status: 'ok', detail: { productCode: code, productModel: 'X', catalog: 'MOSFET', image: IMG, params: [] } };
 };
 const fetched: string[] = [];
+let smallMissing = false;
 const app = makeApp({
   lcscFetch: fakeLcsc,
   imageFetch: async (url) => {
     fetched.push(url);
-    if (url.includes('/224x224/')) return new Response('nope', { status: 404 }); // the small folder is not published: fall back
-    return new Response(WEBP, { headers: { 'content-type': 'image/jpeg' } });
+    if (url.includes('/96x96/') && smallMissing) return new Response('nope', { status: 404 });
+    if (url.includes('/900x900/')) return new Response(new Uint8Array(64 * 1024).fill(0xff), { headers: { 'content-type': 'image/jpeg' } });
+    return new Response(JPEG, { headers: { 'content-type': 'image/jpeg' } });
   },
 });
 const call = (path: string, init?: RequestInit) => app.fetch(new Request(`https://partlib.test${path}`, init), env as unknown as AppEnv);
-const putImage = (id: number, body: BodyInit) => call(`/api/parts/${id}/image`, { method: 'PUT', body, headers: { 'content-type': 'image/webp' } });
+const post = (partIds: number[]) => call('/api/images/fetch', { method: 'POST', body: JSON.stringify({ partIds }), headers: { 'content-type': 'application/json' } });
 const nth = async (n: number) => (await env.DB.prepare("SELECT id, lcsc_code FROM parts WHERE lcsc_code <> '' ORDER BY id LIMIT 1 OFFSET ?").bind(n).first<{ id: number; lcsc_code: string }>())!;
-const firstPart = async () => (await nth(0)).id;
 
 describe('image domain', () => {
   it('takes the first usable LCSC image and nothing else', () => {
@@ -42,8 +44,8 @@ describe('image domain', () => {
     expect(isAllowedImageUrl(IMG)).toBe(true);
     for (const bad of ['http://assets.lcsc.com/a.jpg', 'https://assets.lcsc.com.evil.test/a.jpg', 'https://user@assets.lcsc.com/a.jpg', 'https://assets.lcsc.com:8443/a.jpg', 'nonsense']) expect(isAllowedImageUrl(bad)).toBe(false);
   });
-  it('tries the small variant first and the original second', () => {
-    expect(imageCandidates(IMG)).toEqual([IMG.replace('900x900', '224x224'), IMG]);
+  it('wants LCSC\u2019s 96x96 picture first, then 224x224, and never the 900x900 original', () => {
+    expect(imageCandidates(IMG)).toEqual([IMG.replace('900x900', '96x96'), IMG.replace('900x900', '224x224')]);
     expect(imageCandidates('https://assets.lcsc.com/a.jpg')).toEqual(['https://assets.lcsc.com/a.jpg']);
   });
   it('recognises images by their bytes, not their claimed type', () => {
@@ -58,66 +60,58 @@ describe('image domain', () => {
 });
 
 describe('part image API', () => {
-  beforeEach(async () => { await reset(); NO_IMAGE = ''; asked.length = 0; fetched.length = 0; await importLcsc(FILES.a, { apply: true }); });
+  beforeEach(async () => { await reset(); NO_IMAGE = ''; smallMissing = false; fetched.length = 0; await importLcsc(FILES.a, { apply: true }); });
 
   it('lists parts with a C-number and no image, and writes nothing doing so', async () => {
-    const before = await count('part_images');
-    const res = await call('/api/images/pending');
-    const { parts } = (await res.json()) as { parts: Array<{ partId: number; code: string }> };
+    const { parts } = (await (await call('/api/images/pending')).json()) as { parts: Array<{ partId: number }> };
     expect(parts.length).toBeGreaterThan(50);
-    expect(await count('part_images')).toBe(before);
     expect(await count('part_images')).toBe(0);
   });
 
-  it('answers with LCSC’s first image URL, and says why when there is none', async () => {
-    const id = await firstPart();
-    expect(await (await call(`/api/parts/${id}/image/source`, { method: 'POST' })).json()).toEqual({ url: IMG });
+  it('stores LCSC\u2019s 96x96 picture as it is, serves it with an ETag, and a repeat replaces it', async () => {
+    const part = await nth(0);
+    expect((await call(`/api/parts/${part.id}/image`)).status).toBe(404);
+    const r = (await (await post([part.id])).json()) as { results: Array<{ status: string; bytes: number }> };
+    expect(r.results).toEqual([{ partId: part.id, status: 'stored', bytes: JPEG.length }]);
+    expect(fetched).toEqual([IMG.replace('900x900', '96x96')]);
+    expect((await post([part.id])).status).toBe(200); // retrying is harmless
+    expect(await count('part_images')).toBe(1);
+    const got = await call(`/api/parts/${part.id}/image`);
+    expect(got.headers.get('content-type')).toBe('image/jpeg');
+    expect(new Uint8Array(await got.arrayBuffer())).toEqual(JPEG);
+    const etag = got.headers.get('etag')!;
+    expect((await call(`/api/parts/${part.id}/image`, { headers: { 'if-none-match': etag } })).status).toBe(304);
+    await new Promise((res) => setTimeout(res, 5));
+    await post([part.id]);
+    expect((await call(`/api/parts/${part.id}/image`, { headers: { 'if-none-match': etag } })).status).toBe(200);
+    const pending = (await (await call('/api/images/pending')).json()) as { parts: Array<{ partId: number }> };
+    expect(pending.parts.some((p) => p.partId === part.id)).toBe(false);
+  });
+
+  it('falls back to 224x224 when the 96x96 is missing, and refuses to keep the 900x900', async () => {
+    const part = await nth(0);
+    smallMissing = true;
+    await post([part.id]);
+    expect(fetched).toEqual([IMG.replace('900x900', '96x96'), IMG.replace('900x900', '224x224')]);
+    expect(await count('part_images')).toBe(1);
+  });
+
+  it('says why a part got no image, and stores nothing for it', async () => {
     const other = await nth(1);
     NO_IMAGE = other.lcsc_code;
-    const r = await call(`/api/parts/${other.id}/image/source`, { method: 'POST' });
-    expect(r.status).toBe(404);
-    expect(((await r.json()) as { error: string }).error).toBe('LCSC lists this part without an image.');
+    const r = (await (await post([other.id, 999999])).json()) as { results: Array<{ partId: number; status: string }> };
+    expect(r.results.map((x) => x.status)).toEqual(['no_image']); // an unknown id is simply not in the answer
     expect(await count('part_images')).toBe(0);
   });
 
-  it('proxies only LCSC hosts, falling back from the small size to the original', async () => {
-    expect((await call(`/api/image-proxy?url=${encodeURIComponent('https://evil.example/a.jpg')}`)).status).toBe(400);
-    const ok = await call(`/api/image-proxy?url=${encodeURIComponent(IMG)}`);
-    expect(ok.status).toBe(200);
-    expect(fetched).toEqual([IMG.replace('900x900', '224x224'), IMG]);
-    expect(new Uint8Array(await ok.arrayBuffer())).toEqual(WEBP);
+  it('is limited to 10 parts a request, so it stays under the 50-subrequest limit', async () => {
+    expect((await post(Array.from({ length: 11 }, (_, i) => i + 1))).status).toBe(400);
   });
 
-  it('stores one image per part, serves it with an ETag, and replacing it changes the ETag', async () => {
-    const id = await firstPart();
-    expect((await call(`/api/parts/${id}/image`)).status).toBe(404);
-    expect((await putImage(id, WEBP)).status).toBe(200);
-    expect((await putImage(id, WEBP)).status).toBe(200); // retrying is harmless
-    expect(await count('part_images')).toBe(1);
-    const got = await call(`/api/parts/${id}/image`);
-    expect(got.headers.get('content-type')).toBe('image/webp');
-    expect(new Uint8Array(await got.arrayBuffer())).toEqual(WEBP);
-    const etag = got.headers.get('etag')!;
-    expect((await call(`/api/parts/${id}/image`, { headers: { 'if-none-match': etag } })).status).toBe(304);
-    await new Promise((r) => setTimeout(r, 5));
-    await putImage(id, WEBP);
-    expect((await call(`/api/parts/${id}/image`, { headers: { 'if-none-match': etag } })).status).toBe(200);
-    const pending = (await (await call('/api/images/pending')).json()) as { parts: Array<{ partId: number }> };
-    expect(pending.parts.some((p) => p.partId === id)).toBe(false);
-  });
-
-  it('refuses what is not a small image', async () => {
-    const id = await firstPart();
-    expect((await putImage(id, new TextEncoder().encode('<svg/>'))).status).toBe(415);
-    expect((await putImage(id, new Uint8Array(30 * 1024).fill(1))).status).toBe(413);
-    expect((await putImage(999999, WEBP)).status).toBe(404);
-    expect(await count('part_images')).toBe(0);
-  });
-
-  it('reads one row to serve an image (the ledger and part tables stay untouched)', async () => {
-    const id = await firstPart();
-    await putImage(id, WEBP);
-    const r = await env.DB.prepare('SELECT mime, bytes FROM part_images WHERE part_id = ?').bind(id).all();
+  it('reads one row to serve an image', async () => {
+    const part = await nth(0);
+    await post([part.id]);
+    const r = await env.DB.prepare('SELECT mime, bytes FROM part_images WHERE part_id = ?').bind(part.id).all();
     expect(r.meta.rows_read).toBeLessThanOrEqual(1);
   });
 });

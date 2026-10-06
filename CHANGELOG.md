@@ -7,10 +7,10 @@ D1 and is not tracked here; this file is about the code and the schema.
 
 ### Part images
 
-- A **thumbnail of LCSC's first image** on the part page and in the side panel beside the parts table. Design, free-tier
+- A **picture of the part** (LCSC's first image) on the part page and in the side panel beside the parts table. Design, free-tier
   cost and what is still unverified: `docs/part-images.md`.
-- The Worker only ferries bytes (`/api/image-proxy`, LCSC's image host only); the **browser** downscales to at most 128 px
-  (WebP, about 4 KB) and stores it. Image bytes live in their own table `part_images` (migration `0007`), never read by a list.
+- LCSC publishes each picture at several sizes, so the Worker stores the **96x96 JPEG (about 3 KB) exactly as LCSC sends it**: no
+  resizing anywhere. Bytes live in their own table `part_images` (migration `0007`), never read by a list.
 - **Enrich page** has a "Fetch part images" button (parts with a C-number and no image); a part page offers "Fetch image".
 - 194 tests. Migration `0007` is not applied anywhere yet.
 

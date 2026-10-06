@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { familyById, formatSpec, type SpecChange } from '../domain/specs';
 import { api } from './api';
 import { useParts } from './hooks';
-import { fetchPartImage } from './partImage';
+import { IMAGE_CHUNK, fetchPartImages, outcomeText } from './partImage';
 
 interface PlanItem {
   partId: number; mpn: string; lcscCode: string | null; family: string; familyLabel: string;
@@ -47,16 +47,16 @@ export function Enrich() {
     setMsg(`${stop.current ? 'Stopped. ' : ''}Fetched ${tally.ok ?? 0}; ${tally.not_listed ?? 0} no longer listed${tally.error ? `; ${tally.error} failed and will be retried next time` : ''}.`);
   });
 
-  // One part at a time: each needs two LCSC requests from the Worker and a resize in this browser, so there is
-  // nothing to gain from parallelism and a small pause keeps us polite to LCSC.
+  // Ten parts per request: each costs the Worker two LCSC requests, and a request may make at most 50.
   const fetchImages = () => run('images', async () => {
     const { parts: todo } = await api<{ parts: Array<{ partId: number }> }>('/images/pending');
     if (todo.length === 0) { setMsg('Every part with a C-number already has an image.'); return; }
     let done = 0, bytes = 0; const failed: Record<string, number> = {};
-    for (let i = 0; i < todo.length && !stop.current; i++) {
-      setProgress(`Fetching images… ${i + 1} of ${todo.length}`);
-      try { bytes += await fetchPartImage(todo[i]!.partId); done++; } catch (e) { const m = (e as Error).message; failed[m] = (failed[m] ?? 0) + 1; }
-      await new Promise((r) => setTimeout(r, 150));
+    for (let i = 0; i < todo.length && !stop.current; i += IMAGE_CHUNK) {
+      setProgress(`Fetching images\u2026 ${Math.min(i + IMAGE_CHUNK, todo.length)} of ${todo.length}`);
+      for (const o of await fetchPartImages(todo.slice(i, i + IMAGE_CHUNK).map((p) => p.partId))) {
+        if (o.status === 'stored') { done++; bytes += o.bytes ?? 0; } else { const m = outcomeText(o); failed[m] = (failed[m] ?? 0) + 1; }
+      }
     }
     const why = Object.entries(failed).map(([m, n]) => `${n} \u00d7 ${m}`).join(' ');
     setMsg(`${stop.current ? 'Stopped. ' : ''}Stored ${done} images (${Math.round(bytes / 1024)} KB in total).${why ? ` Not stored: ${why}` : ''}`);
@@ -105,7 +105,7 @@ export function Enrich() {
 
       <div className="box">
         <h2 style={{ marginTop: 0 }}>Part images</h2>
-        <p className="lede">Fetches LCSC&rsquo;s first picture for each part that has a C-number and no picture yet, shrinks it to a small thumbnail in your browser (about 4 KB) and keeps it. Parts you already have a picture for are skipped.</p>
+        <p className="lede">Fetches LCSC&rsquo;s first picture for each part that has a C-number and no picture yet, keeps LCSC&rsquo;s smallest version (96&times;96, about 3 KB). Parts you already have a picture for are skipped.</p>
         <div className="row"><button onClick={fetchImages} disabled={busy}>Fetch part images</button>{busy && <button className="secondary" onClick={() => { stop.current = true; }}>Stop</button>}</div>
       </div>
 

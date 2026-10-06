@@ -1,16 +1,13 @@
 /**
- * Part images (docs/part-images.md). Pure decisions only: which LCSC image to use, which hosts the Worker may
- * fetch for the browser, and whether uploaded bytes really are a small image. No I/O.
+ * Part images (docs/part-images.md). Pure decisions only: which LCSC image to use, which size, which hosts the Worker
+ * may fetch, and whether fetched bytes really are a small image. No I/O.
  *
- * LCSC's detail response field names for images are NOT yet verified from a Worker (egress to wmsc.lcsc.com is
- * unverified, docs/spec-enrichment.md section 11), so `firstImageUrl` accepts the shapes seen in the wild and
- * returns null for anything else rather than guessing.
+ * LCSC's detail response carries `productImages`, a list of URLs (front, back, ...); verified 2026-10-06. Other
+ * shapes are accepted defensively; anything else returns null rather than a guess.
  */
 
-/** Largest stored image, in bytes. A 128 px WebP is 3-6 KB; this ceiling only stops a mistake becoming a big row. */
+/** Largest stored image, in bytes. LCSC's own 96x96 JPEG is about 3 KB and its 224x224 about 10 KB; this only stops a mistake becoming a big row. */
 export const MAX_IMAGE_BYTES = 24 * 1024;
-/** Longest side of the stored image, in pixels. The browser downscales to this before uploading. */
-export const IMAGE_MAX_SIDE = 128;
 
 const HOSTS = new Set(['assets.lcsc.com']);
 
@@ -43,13 +40,15 @@ export function firstImageUrl(result: unknown): string | null {
 }
 
 /**
- * LCSC image paths carry the size as a folder (`/900x900/`). Try the small variant first and the original second,
- * so a size LCSC does not publish costs one extra request instead of a missing image. The first candidate is the
- * cheapest to transfer; the browser downscales either way.
+ * LCSC serves every image at several sizes, the size being a folder in the path (`/900x900/`). Verified 2026-10-06
+ * against a real response: 96x96 = 2.9 KB, 224x224 = 9.5 KB, 900x900 = 63 KB, all JPEG. We want the smallest, so no
+ * resizing is needed anywhere: the Worker stores LCSC's 96x96 as it is. The 224 folder is the fallback if 96 is
+ * missing; the original (900) is deliberately never a candidate, it is too big to keep.
  */
 export function imageCandidates(url: string): string[] {
-  const small = url.replace(/\/(\d{2,4})x\1\//, '/224x224/');
-  return small === url ? [url] : [small, url];
+  const m = /\/(\d{2,4})x\1\//.exec(url);
+  if (!m) return [url];
+  return ['96x96', '224x224'].map((s) => url.replace(m[0], `/${s}/`));
 }
 
 /** What kind of image these bytes are, by their magic numbers (never by the claimed content type). */
