@@ -1,4 +1,5 @@
 import { env } from 'cloudflare:workers';
+import layoutBom from './fixtures/kicad/designator-layout.csv?raw';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { bomValueSi, packageFromFootprint, parseKicadBom } from '../src/domain/kicadBom';
 import type { LcscDetail } from '../src/domain/specs';
@@ -367,5 +368,53 @@ describe('a line that moves to another part releases the first part\'s need', ()
     await run({ csv: moved }, true);
     const rows = (await env.DB.prepare('SELECT part_id, status, qty_needed FROM needs ORDER BY part_id').all<any>()).results;
     expect(rows).toEqual([{ part_id: x, status: 'cancelled', qty_needed: 2 }, { part_id: made.json.id, status: 'to_buy', qty_needed: 2 }]);
+  });
+});
+
+describe('a BOM in the Designator / Footprint / Quantity / Value / LCSC Part # layout (no MPN column)', () => {
+  const REAL = { filename: 'bom.csv', csv: layoutBom };
+
+  it('parses without errors or warnings: its column names need no configuration', () => {
+    const p = parseKicadBom(layoutBom);
+    expect(p.errors).toEqual([]);
+    expect(p.warnings).toEqual([]);
+    expect(p.lines).toHaveLength(12);
+    expect(p.lines.reduce((n, l) => n + l.qty, 0)).toBe(28); // the Quantity column summed, and also the number of references
+    expect(p.lines[0]).toMatchObject({ qty: 9, value: '100n', footprint: '0603', lcsc: '', mpn: '' });
+    expect(p.lines[0]!.refs).toHaveLength(9);
+    expect(p.lines[0]!.refs[7]).toBe('C7_2'); // KiCad's sub-unit references are kept as written
+    expect(p.lines.every((l) => l.key.startsWith('vf:'))).toBe(true); // every LCSC cell is empty and there is no MPN column
+  });
+
+  it('reads bare footprints and the values it uses: 100n, 10u, 330p, 3R3, 2.7k, 10uH, and ~ means nothing', () => {
+    const by = (v: string, f: string) => parseKicadBom(layoutBom).lines.find((l) => l.value === v && l.footprint === f)!;
+    expect(packageFromFootprint('0603')).toBe('0603');
+    expect(packageFromFootprint('SOT-23')).toBeNull();
+    expect(packageFromFootprint('C_Rect_L13.0mm_W6.5mm_P7.50mm_P10.00mm')).toBeNull();
+    expect(bomValueSi('3R3', by('3R3', '1210').refs)).toEqual({ si: 3.3, unit: 'ohm' });
+    expect(bomValueSi('~', ['U4', 'U5'])).toBeNull();
+    expect(bomValueSi('10uH', ['L2'])).toEqual({ si: 1e-5, unit: 'henry' });
+  });
+
+  it('suggests library parts for the passives, including capacitors, and links nothing by itself', async () => {
+    const plan = await run(REAL);
+    expect(plan.status).toBe(200);
+    expect(plan.json.summary).toMatchObject({ total: 12, linked: 0, toIdentify: 12 });
+    expect(plan.json.lines.every((l: any) => l.partId === null)).toBe(true);
+    const sug = (v: string, f: string) => plan.json.lines.find((l: any) => l.value === v && l.footprint === f).suggestions.map((s: any) => s.mpn);
+    expect(sug('3R3', '1210')).toContain('CL1210FN3R3P');            // a resistor, 3.3 ohm
+    expect(sug('100n', '0603')).toContain('CGA0603X7R104K101JT');     // a capacitor: used to be missed (float rounding)
+    expect(sug('330p', '0603')).toContain('CC0603JRNPO0BN331');
+    expect(sug('100n', '0805')).toContain('CGA0805X7R104K101KT');
+  });
+
+  it('applies, and the same file again changes nothing', async () => {
+    const first = await run(REAL, true);
+    expect(first.json.mode).toBe('applied');
+    expect((await bom()).lines).toHaveLength(12);
+    expect(await count('needs')).toBe(0); // nothing linked yet, so nothing is needed
+    const before = await snapshot();
+    expect((await run(REAL, true)).json).toMatchObject({ unchanged: true, rowsWritten: 0 });
+    expect(await snapshot()).toEqual(before);
   });
 });

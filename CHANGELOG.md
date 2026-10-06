@@ -14,6 +14,8 @@ D1 and is not tracked here; this file is about the code and the schema.
   C-number LCSC lists or a typed MPN, mark DNP or ignored, unlink. A line that is not identified yet stays a BOM line ("to
   identify"), not a fake part. A re-import keeps hand links, shows quantity changes and cancels needs for removed lines; ordered
   needs are never touched. The same file twice changes nothing.
+- Checked against a real BOM's layout (`Designator, Footprint, Quantity, Value, LCSC Part #`; bare footprints; `100n`, `3R3`, `~`): it parses with no
+  configuration. Fixed: capacitor suggestions never matched because `100nF` and `100n` differ by float rounding.
 - The BOM columns that hold the LCSC number, MPN and manufacturer are a setting (`bom.fields`), editable on the BOM section.
 - The BOM changes only needs **it created** (`needs.bom_owned`): a need you typed or edited, an ordered or received one, and one you cancelled are never touched, and the preview lists every need change and every disagreement ("you need 50, the BOM says 3") before apply.
 - Migration `0009_bom.sql` (`project_bom`, `bom_lines`, `needs.bom_owned`). `parseCsv` takes an optional delimiter; `mpnKey` is exported so BOM
