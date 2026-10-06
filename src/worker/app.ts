@@ -10,6 +10,7 @@ import { CsvError } from '../domain/csv';
 import { accessMiddleware } from './access';
 import { inventoryRoutes } from './inventory';
 import { purchasingRoutes } from './purchasing';
+import { enrichmentRoutes } from './enrichment';
 import type { AppEnv, Vars } from './env';
 
 const FREE_LIMITS = { rowsRead: 5_000_000, rowsWritten: 100_000, requests: 100_000 } as const;
@@ -75,6 +76,7 @@ export function makeApp(deps: { jwks?: JWTVerifyGetKey } = {}) {
 
   app.route('/api', inventoryRoutes());
   app.route('/api', purchasingRoutes());
+  app.route('/api', enrichmentRoutes());
 
   app.get('/api/health', (c) => c.json({ ok: true, identity: c.get('identity') }));
 
