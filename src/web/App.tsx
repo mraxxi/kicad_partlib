@@ -46,7 +46,11 @@ export function App() {
   useEffect(() => { nav.current?.querySelector('a.on')?.scrollIntoView({ inline: 'center', block: 'nearest' }); }, [active]);
   return (
     <>
-      <nav ref={nav}>{NAV.map(([h, label]) => <a key={h} href={`#${h}`} className={h === active ? 'on' : ''}>{label}</a>)}</nav>
+      {/* LCSC's two-tier header: a deep-blue system bar (hidden on a phone) over the tab bar. */}
+      <header className="appbar">
+        <div className="sysbar"><b>partlib</b><span>Parts inventory and purchasing</span></div>
+        <nav ref={nav}>{NAV.map(([h, label]) => <a key={h} href={`#${h}`} className={h === active ? 'on' : ''}>{label}</a>)}</nav>
+      </header>
       {fills ? <div className="fill">{page}</div> : <main className={wideDoc ? 'fluid' : ''}>{page}</main>}
     </>
   );

@@ -8,7 +8,8 @@ import { useBuyList, useRefreshBuying, type SupplierRow } from './hooks';
 const STATE_LABEL: Record<LineState, string> = {
   buy: 'To buy', covered: 'Covered by stock', no_quote: 'No quotes', ordered: 'Ordered', received: 'Received', cancelled: 'Cancelled',
 };
-const STATE_CLASS: Record<LineState, string> = { buy: '', covered: 'st-ok', no_quote: 'st-reorder', ordered: '', received: 'st-ok', cancelled: '' };
+// Badge colours follow the design system: money still to spend is orange, an order in flight is blue.
+const STATE_CLASS: Record<LineState, string> = { buy: 'need-buy', covered: 'need-covered', no_quote: 'st-reorder', ordered: 'need-ordered', received: 'st-ok', cancelled: 'need-cancelled' };
 
 interface OrderPlan {
   supplierName: string; lines: Array<{ needId: number; projectName: string; mpn: string; qty: number; totalIdr: number }>;
@@ -36,10 +37,10 @@ export function LineRow({ l, suppliers, refresh }: { l: BuyLine; suppliers: Supp
       <td>{editable ? (
         <select value={l.overrideSupplierId ?? ''} onChange={(e) => save.mutate({ overrideSupplierId: e.target.value ? Number(e.target.value) : null })}>
           <option value="">best</option>{suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}</select>) : name(l.overrideSupplierId)}</td>
-      <td className="num">{l.unitPriceIdr !== null ? idr(l.unitPriceIdr) : ''}</td>
+      <td className="num money">{l.unitPriceIdr !== null ? idr(l.unitPriceIdr) : ''}</td>
       <td className="num">{l.moq ?? ''}</td>
       <td className="num">{l.orderQty ?? ''}</td>
-      <td className="num">{l.state === 'ordered' ? idr(l.orderedTotalIdr) : l.lineTotalIdr ? idr(l.lineTotalIdr) : ''}</td>
+      <td className="num money">{l.state === 'ordered' ? idr(l.orderedTotalIdr) : l.lineTotalIdr ? idr(l.lineTotalIdr) : ''}</td>
       <td>{editable ? (
         <select value={l.priority} onChange={(e) => save.mutate({ priority: e.target.value as Priority })}>{PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}</select>) : l.priority}</td>
       <td><span className={`chip ${STATE_CLASS[l.state]}`}>{STATE_LABEL[l.state]}</span></td>
@@ -78,7 +79,7 @@ function OrderDialog({ supplier, onClose }: { supplier: SupplierRow; onClose: ()
           <table><thead><tr><th>MPN</th><th className="num">Order qty</th><th className="num">Unit</th><th className="num">Total</th></tr></thead>
             <tbody>{plan.groups.map((g) => <tr key={g.mpn}><td>{g.mpn}</td><td className="num">{num(g.orderQty)}</td><td className="num">{idr(g.unitPriceIdr)}</td><td className="num">{idr(g.totalIdr)}</td></tr>)}</tbody></table>
           <p>Parts {idr(plan.partsIdr)} + order shipping {idr(plan.orderShippingIdr)} = <b>{idr(plan.grandTotalIdr)}</b> across {plan.lines.length} line{plan.lines.length === 1 ? '' : 's'}.</p>
-          <div className="row"><button onClick={() => apply.mutate()} disabled={apply.isPending}>Mark {plan.lines.length} line{plan.lines.length === 1 ? '' : 's'} ordered</button>
+          <div className="row"><button className="buy" onClick={() => apply.mutate()} disabled={apply.isPending}>Mark {plan.lines.length} line{plan.lines.length === 1 ? '' : 's'} ordered</button>
             {apply.error && <span className="err">{(apply.error as Error).message}</span>}</div>
         </>)}
       {done !== null && <div className="box ok">{done} line{done === 1 ? '' : 's'} marked ordered. Import the LCSC export when the order arrives to receive them.</div>}
@@ -104,7 +105,7 @@ export function BuyList() {
 
       <h2>Purchase recap</h2>
       <p className="lede">By supplier. Order shipping is charged once per supplier and waived above its free-shipping threshold.
-        {' '}<a href="/api/buylist/cart.csv" download>Download LCSC cart (CSV)</a></p>
+        {' '}<a className="button buy" href="/api/buylist/cart.csv" download>Download LCSC cart (CSV)</a></p>
       <div className="scroll"><table>
         <thead><tr><th>Supplier</th><th className="num">Lines</th><th className="num">Parts</th><th className="num">Listing shipping</th><th className="num">Order shipping</th><th className="num">Total to buy</th><th className="num">Ordered, in transit</th><th /></tr></thead>
         <tbody>
