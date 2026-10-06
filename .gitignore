@@ -29,3 +29,7 @@ Thumbs.db
 # Built web app (vite build -> public/); only the placeholder is tracked.
 public/*
 !public/.gitkeep
+
+# Python bytecode (left over from the Phase-0 Python tests; never track it).
+__pycache__/
+*.pyc
