@@ -3,7 +3,7 @@ import { BuyList } from './BuyList';
 import { Dashboard } from './Dashboard';
 import { Donors } from './Donors';
 import { Enrich } from './Enrich';
-import { ImportLcsc } from './ImportLcsc';
+import { ImportPage } from './ImportPage';
 import { Locations } from './Locations';
 import { PartDetail } from './PartDetail';
 import { Parts } from './Parts';
@@ -14,7 +14,7 @@ import { useRoute } from './route';
 
 const NAV = [
   ['/', 'Dashboard'], ['/parts', 'Parts'], ['/projects', 'Projects'], ['/buy', 'Buy list'], ['/salvage', 'Salvage'],
-  ['/suppliers', 'Suppliers'], ['/locations', 'Locations'], ['/import', 'Import LCSC'], ['/enrich', 'Enrich'], ['/settings', 'Settings'],
+  ['/suppliers', 'Suppliers'], ['/locations', 'Locations'], ['/import', 'Import'], ['/enrich', 'Enrich'], ['/settings', 'Settings'],
 ] as const;
 
 export function App() {
@@ -36,7 +36,7 @@ export function App() {
     : path === '/suppliers' ? <Suppliers />
     : path === '/salvage' ? <Donors />
     : path === '/locations' ? <Locations />
-    : path === '/import' ? <ImportLcsc />
+    : path === '/import' ? <ImportPage />
     : path === '/enrich' ? <Enrich />
     : path === '/settings' ? <Settings />
     : <Dashboard />;

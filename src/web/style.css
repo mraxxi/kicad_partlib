@@ -127,3 +127,7 @@ ol.order-list { list-style:decimal inside; padding:0; max-width:420px; }
 ol.order-list li { display:flex; gap:8px; align-items:center; padding:2px 0; }
 ol.order-list li .grow { flex:1; }
 .ok-text { color: var(--ok); }
+
+.tabs { display:flex; gap:6px; margin:0 0 14px; flex-wrap:wrap; }
+button.tab { background:transparent; color:var(--muted); border:1px solid var(--line); }
+button.tab.on { background:var(--chip); color:var(--fg); border-color:var(--accent); font-weight:600; }

@@ -5,6 +5,17 @@ D1 and is not tracked here; this file is about the code and the schema.
 
 ## [Unreleased]
 
+### Importing an LCSC cart export
+
+- **Import page** now has two tabs: the order export (parts that arrived) and the **cart export** (parts to buy).
+- A cart becomes **needs** in a project you choose (or a new one) and an **LCSC quote** per line from the cart's price and
+  MOQ, converted at the rate you type. Preview first: new parts, parts you already have, **in stock** and **will buy**
+  per line, warnings (no price, quantity not a multiple, the project already needs a different amount).
+- Safe to repeat: existing needs keep their quantity, quotes with price breaks are left alone, the same cart twice changes
+  nothing. The LCSC cart exported from the buy list afterwards matches what was imported (tested).
+- The shared "create or match parts" statements moved to `partStatements` so both importers use the same code.
+- 183 tests.
+
 ### Spec enrichment: Value, Key specs and sort chains
 
 - **Value is spec #0**: the first spec a part has, in its family's importance order, never blank for a part LCSC knows.

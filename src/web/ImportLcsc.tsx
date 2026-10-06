@@ -62,7 +62,6 @@ export function ImportLcsc() {
 
   return (
     <>
-      <h1>Import an LCSC order</h1>
       <p className="lede">Choose the CSV exported from LCSC, check the details, preview, then apply. Nothing is written until you apply.</p>
       <form className="import" onSubmit={(e) => { e.preventDefault(); void send(false); }}>
         <label>LCSC CSV file

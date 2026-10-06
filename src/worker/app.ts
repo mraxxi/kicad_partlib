@@ -8,6 +8,8 @@ import { orderDateFromOrderNo, parseLcscCsv, parseLcscFilename } from '../domain
 import { MoneyError, parseMicro } from '../domain/money';
 import { CsvError } from '../domain/csv';
 import { accessMiddleware } from './access';
+import { cartRoutes } from './cart';
+import { sha256Hex } from './util';
 import { inventoryRoutes } from './inventory';
 import { purchasingRoutes } from './purchasing';
 import { enrichmentRoutes } from './enrichment';
@@ -31,11 +33,6 @@ const importBody = z.object({
 function isRealDate(s: string): boolean {
   const d = new Date(`${s}T00:00:00Z`);
   return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s;
-}
-
-async function sha256Hex(text: string): Promise<string> {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
-  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
 function planView(plan: ImportPlan) {
@@ -78,6 +75,7 @@ export function makeApp(deps: { jwks?: JWTVerifyGetKey; lcscFetch?: LcscFetcher 
   app.route('/api', inventoryRoutes());
   app.route('/api', purchasingRoutes());
   app.route('/api', enrichmentRoutes({ lcscFetch: deps.lcscFetch }));
+  app.route('/api', cartRoutes());
 
   app.get('/api/health', (c) => c.json({ ok: true, identity: c.get('identity') }));
 

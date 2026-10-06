@@ -1,5 +1,5 @@
 import { costIdrMicro } from '../domain/money';
-import { planLcscImport, type ExistingPart, type LcscLine, type Plan } from '../domain/lcsc';
+import { planLcscImport, type ExistingPart, type LcscLine, type Plan, type PlanLine } from '../domain/lcsc';
 import { Meter } from './meter';
 
 export interface OrderMeta {
@@ -70,9 +70,61 @@ export async function buildPlan(
 
 // Resolves a line's part: the id when it matched an existing part, otherwise the
 // C-number of the part this same batch just created.
-const PART = `COALESCE(json_extract(j.value, '$.part_id'),
+export const PART = `COALESCE(json_extract(j.value, '$.part_id'),
                        (SELECT id FROM parts WHERE lcsc_code = json_extract(j.value, '$.lcsc')))`;
 const ORDER_ID = `(SELECT id FROM orders WHERE supplier_id = ?2 AND order_no = ?3)`;
+
+/**
+ * The statements that make sure every planned line has a part: create the missing ones, set a C-number on a part
+ * that matched by MPN and had none, and remember a manufacturer's other spelling as an alias. Shared by the order
+ * import and the cart import so a part is created and matched identically either way. All are INSERT OR IGNORE /
+ * conditional, so replaying them is harmless.
+ */
+export function partStatements(db: D1Database, live: PlanLine[], now: string): D1PreparedStatement[] {
+  const created = live.filter((l) => l.action === 'create_part');
+  const partsJson = JSON.stringify(
+    created.map((l) => ({
+      mpn: l.line.mpn, manufacturer: l.line.manufacturer, norm: l.manufacturerNorm,
+      category: l.category, description: l.line.description === '-' ? '' : l.line.description,
+      package: l.line.package === '-' ? '' : l.line.package, value: l.value,
+      lcsc: l.line.lcsc, review: l.needsReview ? 1 : 0,
+    })),
+  );
+  const codeJson = JSON.stringify(
+    live.filter((l) => l.setLcscCode && l.partId !== null).map((l) => ({ part_id: l.partId, lcsc: l.line.lcsc })),
+  );
+  const aliasJson = JSON.stringify(
+    live.filter((l) => l.manufacturerVariant && l.partId !== null).map((l) => ({ part_id: l.partId, mfr: l.line.manufacturer })),
+  );
+  return [
+    db
+      .prepare(
+        `INSERT OR IGNORE INTO parts(mpn, manufacturer, manufacturer_norm, category_id, description,
+                                     package, value, lcsc_code, needs_review, created_at, updated_at)
+         SELECT json_extract(j.value,'$.mpn'), json_extract(j.value,'$.manufacturer'), json_extract(j.value,'$.norm'),
+                (SELECT id FROM categories WHERE name = json_extract(j.value,'$.category')),
+                json_extract(j.value,'$.description'), json_extract(j.value,'$.package'),
+                json_extract(j.value,'$.value'), json_extract(j.value,'$.lcsc'),
+                json_extract(j.value,'$.review'), ?2, ?2
+           FROM json_each(?1) j`,
+      )
+      .bind(partsJson, now),
+    db
+      .prepare(
+        `UPDATE parts SET lcsc_code = (SELECT json_extract(j.value,'$.lcsc') FROM json_each(?1) j
+                                        WHERE json_extract(j.value,'$.part_id') = parts.id),
+                          rev = rev + 1, updated_at = ?2
+          WHERE lcsc_code IS NULL AND id IN (SELECT json_extract(value,'$.part_id') FROM json_each(?1))`,
+      )
+      .bind(codeJson, now),
+    db
+      .prepare(
+        `INSERT OR IGNORE INTO part_aliases(part_id, kind, value)
+         SELECT json_extract(j.value,'$.part_id'), 'manufacturer', json_extract(j.value,'$.mfr') FROM json_each(?1) j`,
+      )
+      .bind(aliasJson),
+  ];
+}
 
 export interface ApplyResult {
   rowsWritten: number;
@@ -100,21 +152,6 @@ export async function applyLcscImport(
   if (live.length === 0 && plan.needsToClose.length === 0) return { rowsRead: 0, rowsWritten: 0 };
   const before = { r: meter.rowsRead, w: meter.rowsWritten };
 
-  const created = live.filter((l) => l.action === 'create_part');
-  const partsJson = JSON.stringify(
-    created.map((l) => ({
-      mpn: l.line.mpn, manufacturer: l.line.manufacturer, norm: l.manufacturerNorm,
-      category: l.category, description: l.line.description === '-' ? '' : l.line.description,
-      package: l.line.package === '-' ? '' : l.line.package, value: l.value,
-      lcsc: l.line.lcsc, review: l.needsReview ? 1 : 0,
-    })),
-  );
-  const codeJson = JSON.stringify(
-    live.filter((l) => l.setLcscCode && l.partId !== null).map((l) => ({ part_id: l.partId, lcsc: l.line.lcsc })),
-  );
-  const aliasJson = JSON.stringify(
-    live.filter((l) => l.manufacturerVariant && l.partId !== null).map((l) => ({ part_id: l.partId, mfr: l.line.manufacturer })),
-  );
   const linesJson = JSON.stringify(
     live.map((l) => ({
       part_id: l.partId, lcsc: l.line.lcsc, qty: l.line.qty,
@@ -132,32 +169,7 @@ export async function applyLcscImport(
          VALUES (?1, ?2, ?3, 'USD', ?4, ?5, ?6, 'received', ?7)`,
       )
       .bind(meta.supplierId, meta.orderNo, meta.orderDate, meta.fxIdrPerUsdMicro, meta.shippingIdr, meta.dutiesIdr, file.sha256),
-    db
-      .prepare(
-        `INSERT OR IGNORE INTO parts(mpn, manufacturer, manufacturer_norm, category_id, description,
-                                     package, value, lcsc_code, needs_review, created_at, updated_at)
-         SELECT json_extract(j.value,'$.mpn'), json_extract(j.value,'$.manufacturer'), json_extract(j.value,'$.norm'),
-                (SELECT id FROM categories WHERE name = json_extract(j.value,'$.category')),
-                json_extract(j.value,'$.description'), json_extract(j.value,'$.package'),
-                json_extract(j.value,'$.value'), json_extract(j.value,'$.lcsc'),
-                json_extract(j.value,'$.review'), ?2, ?2
-           FROM json_each(?1) j`,
-      )
-      .bind(partsJson, now),
-    db
-      .prepare(
-        `UPDATE parts SET lcsc_code = (SELECT json_extract(j.value,'$.lcsc') FROM json_each(?1) j
-                                        WHERE json_extract(j.value,'$.part_id') = parts.id),
-                          rev = rev + 1, updated_at = ?2
-          WHERE lcsc_code IS NULL AND id IN (SELECT json_extract(value,'$.part_id') FROM json_each(?1))`,
-      )
-      .bind(codeJson, now),
-    db
-      .prepare(
-        `INSERT OR IGNORE INTO part_aliases(part_id, kind, value)
-         SELECT json_extract(j.value,'$.part_id'), 'manufacturer', json_extract(j.value,'$.mfr') FROM json_each(?1) j`,
-      )
-      .bind(aliasJson),
+    ...partStatements(db, live, now),
     keyed(
       `INSERT OR IGNORE INTO order_lines(order_id, part_id, qty, unit_price_micro, ext_price_micro, raw_json)
        SELECT ${ORDER_ID}, ${PART}, json_extract(j.value,'$.qty'), json_extract(j.value,'$.unit'),

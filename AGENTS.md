@@ -226,6 +226,19 @@ at quote time and show their age. The LCSC cart format lives in one function (`l
 columns itself on upload (CSV/XLS/XLSX, <= 4 MB, <= 800 lines, needs Quantity plus a part identifier; verified
 2026-10-06), so the export is `LCSC Part Number,Quantity`.
 
+## 11c. The LCSC cart import
+
+`POST /api/import/lcsc-cart` turns LCSC's **cart** export (Index, LCSC#, MPN, ..., Quantity, MOQ, Multiple, Unit Price($)) into
+buy-list needs for a project plus an LCSC quote per priced line. It is the order import's twin: plan (writes nothing), then
+apply in one atomic batch; part matching is the same code (`planLcscImport`, `partStatements`), so a part is created and
+matched identically. Rules worth keeping:
+* A cart quantity is treated as the amount the project **needs**; stock is subtracted by the buy list, and the preview shows
+  "in stock" and "will buy" so a line stock already covers is visible before you apply.
+* An existing need keeps its quantity (and the plan says the cart disagrees); an existing quote **with price breaks is never
+  flattened** by a single cart price; a price of 0 (LCSC shows none) makes no quote.
+* Quotes are whole IDR, so a very cheap part (under about Rp 10) is approximate; the USD price is kept in the quote's note.
+* Importing the same cart again changes nothing (every write is OR IGNORE or an upsert).
+
 ## 11a. Editing a part
 
 * **Direct edits** (no fan-out): value, footprint, description, category, notes, datasheet, minimum stock and the
