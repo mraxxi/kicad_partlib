@@ -464,6 +464,14 @@ describe('a Value that is a part name suggests library parts by MPN', () => {
     expect((await planLines()).find((l: any) => l.value === '2N7002').suggestions.map((s: any) => [s.mpn, s.usableQty])).toEqual([['2N7002KDW', 20], ['2N7002K', 7], ['2N7002A', 0]]); // 2N7002KDW is already in the library (a real LCSC order line)
   });
 
+  it('still suggests a real USB part (USBLC6-2SC6) while USB connector symbol names get nothing', async () => {
+    expect(nameKey('USBLC6-2SC6', ['D1'])).not.toBeNull();
+    for (const v of ['USB_C_Receptacle', 'USB_B_Micro', 'USB_A']) expect(nameKey(v, ['J1']), v).toBeNull();
+    await mk('USBLC6-2SC6');
+    const csv = 'Designator,Footprint,Quantity,Value,LCSC Part #\nD1,SOT-23-6,1,USBLC6-2SC6,';
+    expect((await run({ csv })).json.lines[0].suggestions.map((x: any) => x.mpn)).toEqual(['USBLC6-2SC6']);
+  });
+
   it('is not used for a line that already has an LCSC number or MPN, and electrical values keep their own suggestions', async () => {
     await mk('NE5532ADR');
     const csv = 'Designator,Footprint,Quantity,Value,LCSC Part #\nU1,SOIC-8,1,NE5532AD,C12345\nR1,0603,1,10k,';

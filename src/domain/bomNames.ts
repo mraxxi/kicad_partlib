@@ -15,7 +15,7 @@ export interface PreparedName extends NamePart { norm: string; pkg: string }
 export interface NameSuggestion { partId: number; mpn: string; lcscCode: string | null; value: string; usableQty: number }
 
 export const NAME_MIN_LENGTH = 5;
-const SYMBOL_PREFIX = /^(conn|connector|jack|audiojack|header|terminal|screw|socket|switch|usb|testpoint|mounting)/;
+const SYMBOL_PREFIX = /^(conn|connector|jack|audiojack|header|terminal|screw|socket|switch|usb(conn|micro|mini|type|[abc](conn|\d|$))|testpoint|mounting)/;
 
 export const normName = (s: string): string => s.normalize('NFKD').toLowerCase().replace(/[^a-z0-9]/g, '');
 

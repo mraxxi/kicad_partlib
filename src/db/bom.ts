@@ -1,5 +1,5 @@
 import { DEFAULT_FIELD_MAP, packageFromFootprint, type BomLine, type FieldMap } from '../domain/kicadBom';
-import { matchedPartIds, prepareNames, type NamePart } from '../domain/bomNames';
+import { isNameCandidate, matchedPartIds, nameKey, prepareNames, type NamePart } from '../domain/bomNames';
 import { planBom, prepareCandidates, suggestAny, type BomPlan, type Candidate, type ExistingNeed, type LineStatus, type LinkRule, type StoredLine, type Suggestion } from '../domain/bomPlan';
 import type { ExistingPart } from '../domain/lcsc';
 import { Meter } from './meter';
@@ -39,6 +39,8 @@ async function candidatesFor(db: D1Database, meter: Meter, footprints: string[])
  * prefix matching (case and punctuation ignored) cannot use an index; stock is then read for the matched parts only.
  */
 async function nameCandidatesFor(db: D1Database, meter: Meter, lines: ReadonlyArray<Pick<BomLine, 'value' | 'refs' | 'lcsc' | 'mpn'>>): Promise<NamePart[]> {
+  // No Value looks like a part name: skip the parts read entirely, so a BOM without names costs no extra rows or CPU.
+  if (!lines.some((l) => isNameCandidate(l) && nameKey(l.value, l.refs) !== null)) return [];
   const all = prepareNames((await meter.all<Omit<NamePart, 'usableQty'>>(db.prepare(
     'SELECT id, mpn, package, lcsc_code AS lcscCode, value FROM parts ORDER BY id LIMIT 5000'))).map((p) => ({ ...p, usableQty: 0 })));
   const ids = matchedPartIds(lines, all);
