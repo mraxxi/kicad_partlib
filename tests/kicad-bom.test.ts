@@ -1,6 +1,7 @@
 import { env } from 'cloudflare:workers';
 import layoutBom from './fixtures/kicad/designator-layout.csv?raw';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { nameKey, normName } from '../src/domain/bomNames';
 import { bomValueSi, packageFromFootprint, parseKicadBom } from '../src/domain/kicadBom';
 import type { LcscDetail } from '../src/domain/specs';
 import { makeApp } from '../src/worker/app';
@@ -416,5 +417,72 @@ describe('a BOM in the Designator / Footprint / Quantity / Value / LCSC Part # l
     const before = await snapshot();
     expect((await run(REAL, true)).json).toMatchObject({ unchanged: true, rowsWritten: 0 });
     expect(await snapshot()).toEqual(before);
+  });
+});
+
+describe('a Value that is a part name suggests library parts by MPN', () => {
+  const REAL = { filename: 'bom.csv', csv: layoutBom };
+  const mk = (mpn: string, extra: object = {}) => api('/api/parts', { mpn, ...extra });
+  const planLines = async (extra: object = {}) => (await run({ ...REAL, ...extra })).json.lines;
+  const sugOf = (lines: any[], value: string) => lines.find((l: any) => l.value === value).suggestions.map((s: any) => s.mpn);
+
+  it('treats only a long-enough value with a digit and a letter as a name, never an electrical value or a symbol name', () => {
+    for (const v of ['TPA3255DDV', 'NE5532AD', '2N7002', 'XL7005A', 'AMS1117-3.3', 'RCJ-045']) expect(nameKey(v, ['U1']), v).not.toBeNull();
+    for (const v of ['~', 'SW', 'RED', 'OUT', 'balR', 'EXT_PWR', 'CONN_A', 'Conn_01x04_Socket', 'AudioJack3_SwitchTR', '100nF', '10uH', '3R3', '2.7k', '100u', '1210'])
+      expect(nameKey(v, ['U1']), v).toBeNull();
+    expect(normName('NE-5532/ad_R')).toBe('ne5532adr');
+  });
+
+  it('matches a normalised prefix: NE5532AD finds NE5532ADR, ignoring case and punctuation, and links nothing', async () => {
+    await mk('NE5532ADR', { manufacturer: 'Texas Instruments' });
+    await mk('ne-5532 adrg4', { manufacturer: 'TI' });
+    await mk('NE5532P');
+    const lines = await planLines();
+    const u1 = lines.find((l: any) => l.value === 'NE5532AD');
+    expect(u1.suggestions.map((s: any) => s.mpn)).toEqual(['NE5532ADR', 'ne-5532 adrg4']); // the shorter name first; NE5532P is not a prefix match
+    expect(u1.partId).toBeNull();
+    expect((await run(REAL)).json.summary.linked).toBe(0);
+  });
+
+  it('puts an exact name first, then lets the footprint break ties, then stock', async () => {
+    await mk('NE5532ADR', { package: 'DIP-8' });
+    await mk('NE5532ADRG4', { package: 'SOIC-8' });
+    await mk('NE5532AD', { package: 'DIP-8' });
+    expect(sugOf(await planLines(), 'NE5532AD')).toEqual(['NE5532AD', 'NE5532ADRG4', 'NE5532ADR']); // exact; then the one whose package fits SOIC-8; then the rest
+  });
+
+  it('gives no suggestion for labels and symbol names, even when a library part starts with them', async () => {
+    await mk('SW-TACT-6X6'); await mk('CONN-A-2P'); await mk('OUTPUT-AMP-1'); await mk('~1234');
+    const lines = await planLines();
+    for (const v of ['~', 'CONN_A']) expect(sugOf(lines, v)).toEqual([]);
+  });
+
+  it('suggests by stock: a part with pieces on hand comes before one with none', async () => {
+    await mk('2N7002A');
+    const k = (await mk('2N7002K')).json.id;
+    expect((await api(`/api/parts/${k}/lots`, { moveId: 'a'.repeat(32), qty: 7 })).status).toBe(200);
+    expect((await planLines()).find((l: any) => l.value === '2N7002').suggestions.map((s: any) => [s.mpn, s.usableQty])).toEqual([['2N7002KDW', 20], ['2N7002K', 7], ['2N7002A', 0]]); // 2N7002KDW is already in the library (a real LCSC order line)
+  });
+
+  it('still suggests a real USB part (USBLC6-2SC6) while USB connector symbol names get nothing', async () => {
+    expect(nameKey('USBLC6-2SC6', ['D1'])).not.toBeNull();
+    for (const v of ['USB_C_Receptacle', 'USB_B_Micro', 'USB_A']) expect(nameKey(v, ['J1']), v).toBeNull();
+    await mk('USBLC6-2SC6');
+    const csv = 'Designator,Footprint,Quantity,Value,LCSC Part #\nD1,SOT-23-6,1,USBLC6-2SC6,';
+    expect((await run({ csv })).json.lines[0].suggestions.map((x: any) => x.mpn)).toEqual(['USBLC6-2SC6']);
+  });
+
+  it('is not used for a line that already has an LCSC number or MPN, and electrical values keep their own suggestions', async () => {
+    await mk('NE5532ADR');
+    const csv = 'Designator,Footprint,Quantity,Value,LCSC Part #\nU1,SOIC-8,1,NE5532AD,C12345\nR1,0603,1,10k,';
+    const lines = (await run({ csv })).json.lines;
+    expect(lines.find((l: any) => l.value === 'NE5532AD')).toMatchObject({ key: 'lcsc:C12345', suggestions: [] });
+  });
+
+  it('shows the suggestion on the stored BOM after applying, where suggestions already appear', async () => {
+    await mk('NE5532ADR');
+    await run(REAL, true);
+    const b = await bom();
+    expect(b.lines.find((l: any) => l.value === 'NE5532AD').suggestions.map((s: any) => s.mpn)).toEqual(['NE5532ADR']);
   });
 });

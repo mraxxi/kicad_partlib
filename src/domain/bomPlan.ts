@@ -1,4 +1,5 @@
 import { bomValueSi, packageFromFootprint, type BomLine } from './kicadBom';
+import { prepareNames, suggestByName, type NamePart } from './bomNames';
 import { mpnKey, type ExistingPart } from './lcsc';
 import { normalizeManufacturer, valueToSi } from './normalize';
 
@@ -75,6 +76,8 @@ export interface BomPlanInput {
   remembered: ReadonlyMap<string, number>;
   stored: readonly StoredLine[];
   candidates: readonly Candidate[];
+  /** Parts whose MPN a part-name Value could match (with stock); see bomNames.ts. */
+  nameParts?: readonly NamePart[];
   boards: number;
   /** partId -> the project's existing need for it. */
   needs: ReadonlyMap<number, ExistingNeed>;
@@ -94,8 +97,15 @@ export function suggestFor(line: BomLine, candidates: PreparedCandidates): Sugge
     .map((c) => ({ partId: c.id, mpn: c.mpn, lcscCode: c.lcscCode, value: c.value, usableQty: c.usableQty }));
 }
 
+/** Value + package suggestions first (an exact electrical match); a part-name Value falls back to MPN-prefix suggestions. */
+export function suggestAny(line: BomLine, prepared: PreparedCandidates, names: ReturnType<typeof prepareNames>): Suggestion[] {
+  const byValue = suggestFor(line, prepared);
+  return byValue.length ? byValue : suggestByName(line, names);
+}
+
 export function planBom(input: BomPlanInput): BomPlan {
   const prepared = prepareCandidates(input.candidates);
+  const names = prepareNames(input.nameParts ?? []);
   const byLcsc = new Map<string, ExistingPart>();
   const byIdentity = new Map<string, ExistingPart>();
   const byMpn = new Map<string, ExistingPart[]>();
@@ -136,7 +146,7 @@ export function planBom(input: BomPlanInput): BomPlan {
     out.push({
       line, key: line.key, action, partId, linkRule: rule, status,
       qtyBefore: old?.qty ?? null, qtyAfter: line.qty,
-      suggestions: partId === null && status === 'active' ? suggestFor(line, prepared) : [],
+      suggestions: partId === null && status === 'active' ? suggestAny(line, prepared, names) : [],
     });
   }
   for (const s of input.stored) {

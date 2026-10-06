@@ -16,6 +16,7 @@ D1 and is not tracked here; this file is about the code and the schema.
   needs are never touched. The same file twice changes nothing.
 - Checked against a real BOM's layout (`Designator, Footprint, Quantity, Value, LCSC Part #`; bare footprints; `100n`, `3R3`, `~`): it parses with no
   configuration. Fixed: capacitor suggestions never matched because `100nF` and `100n` differ by float rounding.
+- A BOM line whose Value is a part name (`NE5532AD`, `TPA3255DDV`) and has no LCSC number or MPN now suggests library parts whose MPN starts with it (case and punctuation ignored, footprint as tiebreaker, most stock next). Suggestions only, never a link; labels such as `~`, `SW`, `RED` and connector symbols get none.
 - The BOM columns that hold the LCSC number, MPN and manufacturer are a setting (`bom.fields`), editable on the BOM section.
 - The BOM changes only needs **it created** (`needs.bom_owned`): a need you typed or edited, an ordered or received one, and one you cancelled are never touched, and the preview lists every need change and every disagreement ("you need 50, the BOM says 3") before apply.
 - Migration `0009_bom.sql` (`project_bom`, `bom_lines`, `needs.bom_owned`). `parseCsv` takes an optional delimiter; `mpnKey` is exported so BOM

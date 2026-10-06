@@ -32,7 +32,14 @@ Precedence, and the line shows which rule linked it:
 4. the link already stored on the line, then a link you made for the same line key in any other project ("remembered")
 
 **Value + package never link.** A line like `10uF` + `C_0805` shows up to three parts as suggestions (exact value and package,
-most stock first); you click to link. Anything that is not a plain resistance, capacitance or inductance gets no suggestion.
+most stock first); you click to link. Anything that is not a plain resistance, capacitance or inductance gets no value suggestion.
+
+**A part-name Value suggests by MPN** (`src/domain/bomNames.ts`). When a line has no LCSC number or MPN and its Value looks like a
+part name (`NE5532AD`, `TPA3255DDV`), up to three library parts whose MPN starts with it are suggested, case and punctuation
+ignored (`NE5532AD` finds `NE5532ADR` and `ne-5532 adrg4`). Order: exact name, then a footprint that fits, then most stock. Footprint
+is only a tiebreaker. A name needs 5+ characters with a letter and a digit, must not be an electrical value, and must not start like a
+connector or switch symbol (`Conn`, `Jack`, `USB`, ...); `~`, `SW`, `RED`, `OUT`, `balR` get nothing. No fuzzy matching, never a link.
+Value suggestions win when both apply.
 
 ## Placeholders are BOM lines, not parts
 
