@@ -1,0 +1,13 @@
+﻿Designator,Footprint,Quantity,Value,LCSC Part #
+"C1, C2, C3_2, C3, C4, C5, C6, C7_2, C7",0603,9,100n,
+"C10, C11",0805,2,100n,
+"C12, C13",0603,2,330p,
+C20,CP_Elec_6.3x5.3,1,100u,
+"R1, R2, R3, R4",1210,4,3R3,
+"R5, R6",0603,2,10k,
+R7,0805,1,2.7k,
+L1,0603,1,10uH,
+"J1, J2",JST_PH_B3B-PH-K_1x03_P2.00mm_Vertical,2,CONN_A,
+Q1,SOT-23,1,2N7002,
+U1,SOIC-8_3.9x4.9mm_P1.27mm,1,NE5532AD,
+"U2, U3",Inductor_2_10uH_Leaded_7W15,2,~,

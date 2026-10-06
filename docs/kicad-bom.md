@@ -1,8 +1,13 @@
 # KiCad BOM import
 
 A project's **BOM section** (Projects > a project) imports KiCad's BOM CSV, shows which lines you have in stock and which you
-must buy, and lets you correct every link by hand. Written against KiCad's default export; **not yet verified against a real
-export from the owner's KiCad 10** (the column-name map exists so that can be fixed without a release).
+must buy, and lets you correct every link by hand. Checked against a real export (2026-10-06) whose layout is `Designator, Footprint, Quantity, Value, LCSC Part #` with no MPN or
+manufacturer column, the LCSC cell empty, bare footprints such as `0603`, and values such as `100n`, `3R3`, `2.7k`, `10uH` and `~`. It
+parses with no configuration. The real file is not in the repository (public repo, no owner data in git);
+`tests/fixtures/kicad/designator-layout.csv` is a small synthetic file in the same format (CRLF, UTF-8 BOM, quoted designator lists).
+On such a file every line is keyed `value|footprint` and starts as **to identify**; the chip passives get suggestions from your
+library (a part is only suggested if the library has that exact value and package), the ICs and connectors, whose Value is a part
+name or a label, get none. Fill the LCSC / MPN columns in KiCad and those lines match on their own.
 
 ## The file
 

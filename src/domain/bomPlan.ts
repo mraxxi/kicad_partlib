@@ -21,7 +21,9 @@ export function prepareCandidates(candidates: readonly Candidate[]): PreparedCan
     const v = valueToSi(c.value);
     if (!v) continue;
     const list = out.get(c.package) ?? [];
-    list.push({ ...c, si: v.si, unit: v.unit });
+    // Rounded to 12 digits like bomValueSi: "100nF" is 1.0000000000000001e-7 as a float and never equals the BOM's "100n" otherwise
+    // (found on a real BOM, where no capacitor was ever suggested).
+    list.push({ ...c, si: Number(v.si.toPrecision(12)), unit: v.unit });
     out.set(c.package, list);
   }
   for (const list of out.values()) list.sort((a, b) => b.usableQty - a.usableQty || a.id - b.id);
