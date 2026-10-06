@@ -5,6 +5,17 @@ D1 and is not tracked here; this file is about the code and the schema.
 
 ## [Unreleased]
 
+### Parts table: column order and spec filters
+
+- LCSC # now sits right after MPN by default (Part, MPN, LCSC #, Value, ...). A saved layout is upgraded once
+  (`partlib.layout.parts.v2` to `v3`): LCSC # moves after MPN and widths, hidden columns and your order are kept.
+- Columns reorder by drag and drop: drag a header sideways, or a row in the Columns menu. Part and MPN stay pinned; the
+  up/down arrows stay for touch and keyboard. Order logic is `src/web/columns.ts`.
+- Filter by Footprint (always) and by any spec of the family on screen (Capacitance, Voltage, Dielectric, ...). Each filter is a
+  checklist of the values that occur, with counts that respect the other filters, so Footprint = 0805 turns Capacitance into
+  "what I have in 0805". Any-of within a filter, all-of across filters; un-enriched parts show as (none). Filters are URL
+  parameters (`pkg`, `sp.<spec>`). Logic is `src/domain/specs/facets.ts`. Browser only: no new D1 reads, routes or migrations.
+
 ### Look: modeled on lcsc.com
 
 - The UI now follows a design system taken from the lcsc.com storefront: LCSC blue (`#1166dd`) for links, the active tab and
