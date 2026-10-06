@@ -13,7 +13,7 @@
       "migrations_dir": "migrations"
     }
   ],
-  "vars": { "ACCESS_TEAM_DOMAIN": "pmandiri.cloudflareaccess.com", "ACCESS_AUD": "2aed8c9d9f25e3eac060292029321740bb4e48d5f15cea5502980107dcda581a" },
+  "vars": { "ACCESS_TEAM_DOMAIN": "pmandiri.cloudflareaccess.com", "ACCESS_AUD": "91596b337fa04ee846b3f8201ee129fae9640b267ba63ba8fc064676c708d99d" },
   "env": {
     "staging": {
       "name": "kicad-partlib-staging",
