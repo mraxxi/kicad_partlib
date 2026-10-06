@@ -13,6 +13,7 @@ import { sha256Hex } from './util';
 import { inventoryRoutes } from './inventory';
 import { purchasingRoutes } from './purchasing';
 import { enrichmentRoutes } from './enrichment';
+import { imageRoutes, type ImageFetcher } from './images';
 import type { LcscFetcher } from './lcsc';
 import type { AppEnv, Vars } from './env';
 
@@ -51,7 +52,7 @@ function planView(plan: ImportPlan) {
   };
 }
 
-export function makeApp(deps: { jwks?: JWTVerifyGetKey; lcscFetch?: LcscFetcher } = {}) {
+export function makeApp(deps: { jwks?: JWTVerifyGetKey; lcscFetch?: LcscFetcher; imageFetch?: ImageFetcher } = {}) {
   const app = new Hono<{ Bindings: AppEnv; Variables: Vars }>();
 
   app.use('/api/*', accessMiddleware(deps));
@@ -75,6 +76,7 @@ export function makeApp(deps: { jwks?: JWTVerifyGetKey; lcscFetch?: LcscFetcher 
   app.route('/api', inventoryRoutes());
   app.route('/api', purchasingRoutes());
   app.route('/api', enrichmentRoutes({ lcscFetch: deps.lcscFetch }));
+  app.route('/api', imageRoutes({ lcscFetch: deps.lcscFetch, imageFetch: deps.imageFetch }));
   app.route('/api', cartRoutes());
 
   app.get('/api/health', (c) => c.json({ ok: true, identity: c.get('identity') }));

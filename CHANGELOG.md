@@ -5,6 +5,15 @@ D1 and is not tracked here; this file is about the code and the schema.
 
 ## [Unreleased]
 
+### Part images
+
+- A **thumbnail of LCSC's first image** on the part page and in the side panel beside the parts table. Design, free-tier
+  cost and what is still unverified: `docs/part-images.md`.
+- The Worker only ferries bytes (`/api/image-proxy`, LCSC's image host only); the **browser** downscales to at most 128 px
+  (WebP, about 4 KB) and stores it. Image bytes live in their own table `part_images` (migration `0007`), never read by a list.
+- **Enrich page** has a "Fetch part images" button (parts with a C-number and no image); a part page offers "Fetch image".
+- 194 tests. Migration `0007` is not applied anywhere yet.
+
 ### Importing an LCSC cart export
 
 - **Import page** now has two tabs: the order export (parts that arrived) and the **cart export** (parts to buy).

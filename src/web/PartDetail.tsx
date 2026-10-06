@@ -4,6 +4,7 @@ import { CONDITIONS, CONDITION_LABEL, SOURCE_LABEL, STATUS_LABEL, isEstimatedCos
 import { ApiError, api, newId } from './api';
 import { idr, num, unitIdr, when } from './format';
 import { useCategories, useLocations, useRefreshStock, type Location } from './hooks';
+import { fetchPartImage } from './partImage';
 import { PartSpecsPanel } from './PartSpecs';
 import { Quotes } from './Quotes';
 import { partsHref } from './route';
@@ -186,6 +187,31 @@ function Edit({ d, onSaved }: { d: Detail; onSaved: () => void }) {
   );
 }
 
+
+/**
+ * The part's thumbnail. `no-cache` + ETag on the server means a revisit is a 304; `version` busts the browser's
+ * copy right after a (re)fetch. A part with no image shows nothing, or a button when it has a C-number.
+ */
+function PartImage({ id, hasCode, embedded }: { id: number; hasCode: boolean; embedded: boolean }) {
+  const [state, setState] = useState<'try' | 'none'>('try');
+  const [version, setVersion] = useState(0);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const size = embedded ? 96 : 128;
+  const get = async () => {
+    setBusy(true); setErr(null);
+    try { await fetchPartImage(id); setVersion((v) => v + 1); setState('try'); } catch (e) { setErr((e as Error).message); } finally { setBusy(false); }
+  };
+  return (
+    <div className="part-image" style={{ width: size }}>
+      {state === 'try'
+        ? <img key={version} src={`/api/parts/${id}/image?v=${version}`} width={size} height={size} alt="" onError={() => setState('none')} style={{ objectFit: 'contain' }} />
+        : hasCode && <button className="secondary" onClick={get} disabled={busy}>{busy ? 'Fetching…' : 'Fetch image'}</button>}
+      {err && <p className="lede" role="alert">{err}</p>}
+    </div>
+  );
+}
+
 export function PartDetail({ id, embedded = false }: { id: number; embedded?: boolean }) {
   const refreshStock = useRefreshStock();
   const locations = useLocations().data ?? [];
@@ -198,7 +224,10 @@ export function PartDetail({ id, embedded = false }: { id: number; embedded?: bo
     <>
       {!embedded && <p className="lede"><a href={partsHref()}>← All parts</a></p>}
       {embedded ? <h2 style={{ marginTop: 0 }}>{p.mpn} <span className="lede">{p.code}</span></h2> : <h1>{p.mpn} <span className="lede">{p.code}</span></h1>}
-      <p className="lede">{[p.manufacturer, p.package, p.value, p.category].filter(Boolean).join(' · ')}{p.lcscCode && <> · <a href={`https://www.lcsc.com/product-detail/${p.lcscCode}.html`} target="_blank" rel="noreferrer">{p.lcscCode}</a></>}</p>
+      <div className="part-head">
+        <PartImage key={id} id={id} hasCode={!!p.lcscCode} embedded={embedded} />
+        <p className="lede">{[p.manufacturer, p.package, p.value, p.category].filter(Boolean).join(' · ')}{p.lcscCode && <> · <a href={`https://www.lcsc.com/product-detail/${p.lcscCode}.html`} target="_blank" rel="noreferrer">{p.lcscCode}</a></>}</p>
+      </div>
       {p.needsReview && <div className="box warn">This part was created with missing details; fill them in below.</div>}
       <div className="box stats">
         <div><b>{num(p.usableQty)}</b><span>usable</span></div>
