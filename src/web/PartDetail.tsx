@@ -4,6 +4,7 @@ import { CONDITIONS, CONDITION_LABEL, SOURCE_LABEL, STATUS_LABEL, isEstimatedCos
 import { ApiError, api, newId } from './api';
 import { idr, num, unitIdr, when } from './format';
 import { useCategories, useLocations, useRefreshStock, type Location } from './hooks';
+import { PartSpecsPanel } from './PartSpecs';
 import { Quotes } from './Quotes';
 import { partsHref } from './route';
 
@@ -208,6 +209,7 @@ export function PartDetail({ id, embedded = false }: { id: number; embedded?: bo
       </div>
       <h2>Details</h2>
       <Edit key={p.rev} d={data} onSaved={refresh} />
+      <PartSpecsPanel part={p} onChanged={refresh} />
       <h2>Lots</h2>
       <div className="scroll"><table>
         <thead><tr><th>Lot</th><th>Source</th><th>Condition</th><th>Where</th><th className="num">Qty</th><th className="num">Unit cost</th><th>Date code</th><th /></tr></thead>

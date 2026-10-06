@@ -1,6 +1,6 @@
 import type { SpecDef, SpecValue } from './types';
 
-const PRE: Array<[number, string]> = [[1e9, 'G'], [1e6, 'M'], [1e3, 'k'], [1, ''], [1e-3, 'm'], [1e-6, 'u'], [1e-9, 'n'], [1e-12, 'p']];
+const PRE: Array<[number, string]> = [[1e9, 'G'], [1e6, 'M'], [1e3, 'k'], [1, ''], [1e-3, 'm'], [1e-6, '\u00B5'], [1e-9, 'n'], [1e-12, 'p']];
 const SYMBOL: Record<string, string> = { ohm: 'Ω', degC: '℃', '%': '%', none: '', pin: 'P', hour: 'h', year: 'y', cycle: ' cycles', deg: '°' };
 
 function clean(x: number): string {

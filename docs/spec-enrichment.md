@@ -1,6 +1,6 @@
 # Part specs: Value, Key specs and sort chains
 
-Status: **approved design, in progress.** Written 2026-10-06 after a planning conversation with the owner;
+Status: **phases 0-6 built (not yet deployed as of this edit); phase 7 (LLM fallback) deliberately not started.** Written 2026-10-06 after a planning conversation with the owner;
 everything below was agreed unless marked *open*. Read `AGENTS.md` first. This supersedes the AI-first draft the
 owner supplied (kept in spirit: search finds evidence, an LLM interprets it, application code decides what is stored).
 
@@ -94,11 +94,11 @@ as fallback; `summarize()` returns segments `[{ key, text }]` so the UI can high
 |---|---|---|
 | 0 | Needs-review filter **(done)** | toggle appears only when something is flagged; URL param; dashboard link |
 | 1 | **Proof of concept (done; Worker egress still unverified, see section 11)** | real LCSC data fetched for the owner's parts and saved as fixtures; report of coverage, labels per category and agreement with LCSC's numbers; Worker egress verified. **Stop and review before building more.** |
-| 2 | Quantity parser **(done)** + spec storage | parser agrees with LCSC numbers on the fixtures (it does: section 11); migration for `specs` and `part_enrichment` still to do |
-| 3 | Passives from descriptions | R/C/L Key specs without any network |
-| 4 | Table: Key specs, Value #0, spec columns, sort chain and presets | sorting a MOSFET list by Vds then Rds(on) works; summary never hides specs |
-| 5 | Spec layout editing (Settings) | edits persist across machines |
-| 6 | LCSC mapping, family by family, with review UI and bulk apply | each family has fixtures and agreement tests |
+| 2 | Quantity parser + spec storage **(done)** | parser agrees with LCSC numbers (section 11); migration `0006` adds `parts.specs` and `part_enrichment` |
+| 3 | Passives from descriptions **(done)** | R/C/L Key specs without any network |
+| 4 | Table: Key specs, Value #0, spec columns, sort chain and presets **(done)** | sorting a MOSFET list by Vds then Rds(on) works; summary never hides specs |
+| 5 | Spec layout editing (Settings) **(done)** | edits persist across machines |
+| 6 | LCSC mapping, family by family, with review UI and bulk apply **(done for 11 families)** | each family has fixtures and agreement tests |
 | 7 | LLM fallback | only if phase 6 leaves a gap the owner cares about |
 
 ## 9. Out of scope (deliberately)
@@ -150,3 +150,21 @@ Design consequences the data forced (all adopted):
 route is built (phase 6), deploy it first on its own, behind Access, and call it once from the signed-in browser.
 If Cloudflare is blocked, the fallback is to fetch from the owner's computer with `scripts/poc-lcsc/fetch.mjs`-style
 tooling and upload the raw snapshots.
+
+## 12. As built (read this before changing it)
+
+* **Where:** `src/domain/specs/` (types, `families.ts` registry, `map.ts` LCSC + description mapping and merge, `summary.ts`
+  Value/Key specs and sort values, `format.ts`, `lcsc.ts` trimming), `src/db/enrichment.ts`, `src/worker/enrichment.ts` and
+  `src/worker/lcsc.ts` (the only place that calls LCSC; injectable so tests never touch the network), UI in `Parts.tsx`,
+  `SortChain.tsx`, `PartSpecs.tsx`, `Enrich.tsx`, `SpecLayouts.tsx`.
+* **Spec features appear only when every visible row is one family** (`loneFamily` in `Parts.tsx`). A "Type" filter shows
+  when the visible rows hold more than one family, and, like "Needs review", hides when there is nothing to choose.
+* **Flow and limits:** fetch (<= 20 parts per request, 4 at a time, a transient error is not cached) -> plan (<= 50, reads
+  only) -> apply (<= 50, recomputed server side). The Worker's 10 ms CPU budget is why plan and apply are chunked.
+* **Verified on the deployed Worker** (2026-10-06): Cloudflare reaches LCSC (HTTP 200, 0.6-0.9 s each).
+* **Adding a family** = one entry in `families.ts` (specs, LCSC labels, order, presets) plus a fixture-backed test; nothing is
+  refetched, because the raw record is stored. A family with no entry still stores its raw parameters and shows them under
+  "All specs LCSC lists".
+* **Known limits:** op amps that LCSC files with audio-amplifier labels (RC4580) map only what the op-amp labels cover;
+  alternatives (`315Wx2@4ohm;600Wx1@2ohm`) show the first as the headline and keep the full text; Zener/TVS diodes, switches,
+  memory, DACs, displays have no family yet.

@@ -59,5 +59,5 @@ export interface Family {
 
 /** Core (non-spec) columns a sort chain may use, as `col:<id>`. */
 export const CORE_SORT_KEYS: Array<{ key: string; label: string }> = [
-  { key: 'col:package', label: 'Footprint' }, { key: 'col:mpn', label: 'MPN' }, { key: 'col:usable', label: 'Usable stock' },
+  { key: 'col:value', label: 'Value' }, { key: 'col:package', label: 'Footprint' }, { key: 'col:mpn', label: 'MPN' }, { key: 'col:usable', label: 'Usable stock' },
 ];

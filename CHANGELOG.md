@@ -5,6 +5,22 @@ D1 and is not tracked here; this file is about the code and the schema.
 
 ## [Unreleased]
 
+### Spec enrichment: Value, Key specs and sort chains
+
+- **Value is spec #0**: the first spec a part has, in its family's importance order, never blank for a part LCSC knows.
+  **Key specs** shows the next few; widening the column shows more, hover shows all. 11 families: resistor, capacitor,
+  inductor, MOSFET, diode, LDO, op amp, audio amp, LED, header/connector, MCU.
+- **Sort chain** on the Parts toolbar (appears when the visible rows are one family): sort by any spec, then break ties by
+  the next; built-in presets per family (e.g. MOSFET: Vds high-to-low then Rds(on) low-to-high), your own can be saved.
+  The sorted spec is highlighted inside the summary, the rest stay visible; test conditions that differ (Rds(on) at 10 V vs
+  2.5 V) are flagged. Footprints sort naturally (0201, 0402, 0603...). Optional per-spec columns via Columns.
+- **Specs from LCSC**: `Enrich` page and a "Fetch from LCSC" button on each part: fetch, review, apply selected. Passives
+  can also be filled offline from their description. Specs you enter by hand are never overwritten.
+- **Settings > Spec layouts**: reorder a family's specs (which one is Value), how many Key specs show, edit presets; stored
+  in the database so every machine shares them.
+- **Part page**: every spec with its source (by hand / LCSC / description), manual entry, and "All specs LCSC lists".
+- Migration `0006` (`parts.specs`, `part_enrichment`). 171 tests.
+
 ### Spec enrichment: groundwork and proof of concept
 
 Design recorded in `docs/spec-enrichment.md` (read it before touching specs). Nothing user-visible changes except one filter.

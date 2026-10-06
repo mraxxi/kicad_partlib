@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { BuyList } from './BuyList';
 import { Dashboard } from './Dashboard';
 import { Donors } from './Donors';
+import { Enrich } from './Enrich';
 import { ImportLcsc } from './ImportLcsc';
 import { Locations } from './Locations';
 import { PartDetail } from './PartDetail';
@@ -13,7 +14,7 @@ import { useRoute } from './route';
 
 const NAV = [
   ['/', 'Dashboard'], ['/parts', 'Parts'], ['/projects', 'Projects'], ['/buy', 'Buy list'], ['/salvage', 'Salvage'],
-  ['/suppliers', 'Suppliers'], ['/locations', 'Locations'], ['/import', 'Import LCSC'], ['/settings', 'Settings'],
+  ['/suppliers', 'Suppliers'], ['/locations', 'Locations'], ['/import', 'Import LCSC'], ['/enrich', 'Enrich'], ['/settings', 'Settings'],
 ] as const;
 
 export function App() {
@@ -36,6 +37,7 @@ export function App() {
     : path === '/salvage' ? <Donors />
     : path === '/locations' ? <Locations />
     : path === '/import' ? <ImportLcsc />
+    : path === '/enrich' ? <Enrich />
     : path === '/settings' ? <Settings />
     : <Dashboard />;
   const active = part ? '/parts' : proj ? '/projects' : NAV.find(([h]) => h === path)?.[0] ?? '/';

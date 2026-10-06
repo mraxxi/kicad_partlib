@@ -1,4 +1,5 @@
 import { clearSaved, setPrefs, usePrefs, type Prefs } from './prefs';
+import { SpecLayouts } from './SpecLayouts';
 
 function Choice<T extends string>({ name, value, options, onChange }: { name: string; value: T; options: Array<[T, string, string]>; onChange: (v: T) => void }) {
   return (
@@ -41,6 +42,8 @@ export function Settings() {
       <h2>Saved layouts</h2>
       <p className="lede">The Parts table remembers which columns you show, their order and widths. Use <b>Columns</b> above the table to change them.</p>
       <button className="secondary" onClick={() => { clearSaved('partlib.layout.'); location.reload(); }}>Reset the Parts table layout</button>
+
+      <SpecLayouts />
     </>
   );
 }

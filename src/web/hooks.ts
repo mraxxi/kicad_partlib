@@ -52,3 +52,7 @@ export function useRefreshBuying() {
   const qc = useQueryClient();
   return () => Promise.all(['buylist', 'projects', 'quotes', 'suppliers', 'parts', 'part', 'dashboard'].map((k) => qc.invalidateQueries({ queryKey: [k] })));
 }
+
+import type { LayoutOverride } from '../domain/specs';
+export const useLayouts = () =>
+  useQuery({ queryKey: ['speclayouts'], staleTime: 60_000, queryFn: async () => (await api<{ layouts: Record<string, LayoutOverride> }>('/settings/speclayouts')).layouts });
