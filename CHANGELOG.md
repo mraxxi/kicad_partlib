@@ -9,8 +9,8 @@ D1 and is not tracked here; this file is about the code and the schema.
 
 - A **picture of the part** (LCSC's first image) on the part page and in the side panel beside the parts table. Design, free-tier
   cost and what is still unverified: `docs/part-images.md`.
-- LCSC publishes each picture at several sizes, so the Worker stores the **96x96 JPEG (about 3 KB) exactly as LCSC sends it**: no
-  resizing anywhere. Bytes live in their own table `part_images` (migration `0007`), never read by a list.
+- LCSC publishes each picture at several sizes, so the Worker stores the **224x224 JPEG (about 10 KB) exactly as LCSC sends it**: no
+  resizing anywhere. Shown at 128 px in the side panel and 224 px on the part page. Bytes live in their own table `part_images` (migration `0007`), never read by a list.
 - **Enrich page** has a "Fetch part images" button (parts with a C-number and no image); a part page offers "Fetch image".
 - 194 tests. Migration `0007` is not applied anywhere yet.
 

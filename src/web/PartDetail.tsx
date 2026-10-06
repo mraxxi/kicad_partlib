@@ -192,12 +192,12 @@ function Edit({ d, onSaved }: { d: Detail; onSaved: () => void }) {
  * The part's thumbnail. `no-cache` + ETag on the server means a revisit is a 304; `version` busts the browser's
  * copy right after a (re)fetch. A part with no image shows nothing, or a button when it has a C-number.
  */
-function PartImage({ id, hasCode }: { id: number; hasCode: boolean }) {
+function PartImage({ id, hasCode, embedded }: { id: number; hasCode: boolean; embedded: boolean }) {
   const [state, setState] = useState<'try' | 'none'>('try');
   const [version, setVersion] = useState(0);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const size = 96; // LCSC's smallest picture is 96x96; showing it larger would only blur it
+  const size = embedded ? 128 : 224; // the stored picture is LCSC's 224x224: shown at 128 it is sharp on a sharp screen, at 224 it is 1:1
   const get = async () => {
     setBusy(true); setErr(null);
     try { const [o] = await fetchPartImages([id]); if (o?.status === 'stored') { setVersion((v) => v + 1); setState('try'); } else setErr(o ? outcomeText(o) : 'The server did not answer.'); } catch (e) { setErr((e as Error).message); } finally { setBusy(false); }
@@ -225,7 +225,7 @@ export function PartDetail({ id, embedded = false }: { id: number; embedded?: bo
       {!embedded && <p className="lede"><a href={partsHref()}>← All parts</a></p>}
       {embedded ? <h2 style={{ marginTop: 0 }}>{p.mpn} <span className="lede">{p.code}</span></h2> : <h1>{p.mpn} <span className="lede">{p.code}</span></h1>}
       <div className="part-head">
-        <PartImage key={id} id={id} hasCode={!!p.lcscCode} />
+        <PartImage key={id} id={id} hasCode={!!p.lcscCode} embedded={embedded} />
         <p className="lede">{[p.manufacturer, p.package, p.value, p.category].filter(Boolean).join(' · ')}{p.lcscCode && <> · <a href={`https://www.lcsc.com/product-detail/${p.lcscCode}.html`} target="_blank" rel="noreferrer">{p.lcscCode}</a></>}</p>
       </div>
       {p.needsReview && <div className="box warn">This part was created with missing details; fill them in below.</div>}

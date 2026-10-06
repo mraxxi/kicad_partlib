@@ -7,7 +7,7 @@ import { validate as zValidator } from './validate';
 
 /**
  * Part images (docs/part-images.md). LCSC publishes each picture at several sizes, so the Worker simply downloads
- * the smallest one (96x96, about 3 KB) and stores the bytes as they are: nothing is decoded or resized, which keeps
+ * the 224x224 one (about 10 KB) and stores the bytes as they are: nothing is decoded or resized, which keeps
  * a request far under the 10 ms CPU limit.
  *   POST /images/fetch  asks LCSC for each part's FIRST image and stores it (the only write; one row per part, a
  *                       repeat replaces it, so retrying is harmless)
@@ -28,11 +28,12 @@ export function imageRoutes(deps: { lcscFetch?: LcscFetcher; imageFetch?: ImageF
   const imageFetch = deps.imageFetch ?? defaultImageFetch;
   const r = new Hono<{ Bindings: AppEnv; Variables: Vars }>();
 
-  // Parts with a C-number and no image yet. The part scan is bounded by LIMIT; the image check is a primary-key probe.
+  // Parts with a C-number and no image yet, or only the old 96x96 one (it looked blurry; this re-fetches it at 224x224).
+  // The part scan is bounded by LIMIT; the image check is a primary-key probe.
   r.get('/images/pending', async (c) => {
     const parts = await c.get('meter').all<{ id: number; lcsc_code: string }>(c.env.DB.prepare(
       `SELECT p.id, p.lcsc_code FROM parts p WHERE p.lcsc_code IS NOT NULL AND p.lcsc_code <> ''
-          AND NOT EXISTS (SELECT 1 FROM part_images i WHERE i.part_id = p.id) ORDER BY p.id LIMIT 500`));
+          AND NOT EXISTS (SELECT 1 FROM part_images i WHERE i.part_id = p.id AND i.src_url NOT LIKE '%/96x96/%') ORDER BY p.id LIMIT 500`));
     return c.json({ parts: parts.map((p) => ({ partId: p.id, code: p.lcsc_code })) });
   });
 

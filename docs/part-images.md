@@ -19,17 +19,17 @@ exists at several sizes, the size being a folder in the URL. For C269266:
 | `/224x224/` | 9.5 KB | JPEG, 224x224 |
 | `/900x900/` (what the record lists) | 63.5 KB | JPEG, 900x900 |
 
-So **nothing has to be resized**. The Worker downloads the 96x96 file and stores the bytes as they are. An earlier draft of this
+So **nothing has to be resized**. The Worker downloads the 224x224 file and stores the bytes as they are. (The first version stored 96x96; at the size it was shown it looked blurry, so it was raised to 224x224 on 2026-10-06 and the pending list offers parts that still hold a 96x96 picture again.) An earlier draft of this
 branch had the browser downscale a larger image; that is gone because it was more code, more requests and a bigger image.
 
 ## Decisions
 
 | Question | Decision | Why |
 |---|---|---|
-| Where is it fetched? | The Worker: LCSC's record (1 subrequest), then the 96x96 picture (1 subrequest). Host must be `assets.lcsc.com`. | No CORS problem, no browser round trip, no proxy route. |
-| Which size? | 96x96, falling back to 224x224 if 96 is missing; the 900x900 original is never kept (cap 24 KB). | Smallest that still reads as a part. Shown at 96 CSS px in the side panel and on the part page. |
+| Where is it fetched? | The Worker: LCSC's record (1 subrequest), then the 224x224 picture (1 subrequest). Host must be `assets.lcsc.com`. | No CORS problem, no browser round trip, no proxy route. |
+| Which size? | 224x224, falling back to 96x96 if 224 is missing; the 900x900 original is never kept (cap 40 KB). | 96x96 looked blurry. 224x224 is shown at 128 CSS px in the side panel (sharp on a sharp screen) and 224 CSS px on the part page (1:1). |
 | Resizing? | None. Bytes are checked by magic number (JPEG/PNG/WebP) and stored untouched. | A Worker has 10 ms of CPU and cannot decode an image; it does not need to. |
-| Where is it stored? | `part_images` in D1: one row per part, BLOB, `fetched_at` as the ETag, `src_url` for provenance. Not R2. | D1 is the only store (AGENTS.md); R2 needs a payment method. 3 KB x 10,000 parts = 30 MB of D1's 5 GB. |
+| Where is it stored? | `part_images` in D1: one row per part, BLOB, `fetched_at` as the ETag, `src_url` for provenance. Not R2. | D1 is the only store (AGENTS.md); R2 needs a payment method. 10 KB x 10,000 parts = 100 MB, 2% of D1's 5 GB. |
 | Does it slow the parts list? | No. Bytes live in their own table that no list query reads. The table rows do not show thumbnails (one request per visible row). | Keeps the list at 4 rows read per part. |
 | Which parts? | Those with a C-number. Others show nothing. | Nothing else identifies LCSC's picture. |
 
@@ -43,11 +43,11 @@ branch had the browser downscale a larger image; that is gone because it was mor
 | Open a part with no image | 1 | 0 | 0 | 0 |
 
 The backfill is 1% of the daily request budget and 10% of the write budget, so even 10,000 parts fit in one sitting (the other Workers on the account share these).
-Per-request CPU is moving about 30 KB of bytes plus ten single-row writes, well under 10 ms.
+Per-request CPU is moving about 100 KB of bytes plus ten single-row writes, well under 10 ms.
 
 ## API
 
-* `GET /api/images/pending`: parts with a C-number and no image (at most 500). Reads only.
+* `GET /api/images/pending`: parts with a C-number and no image, or only the old 96x96 one (at most 500). Reads only.
 * `POST /api/images/fetch {partIds}` (at most 10): fetch and store. Per part: `stored`, `no_c_number`, `not_listed`, `no_image`, or `error` with a sentence. Idempotent: one image per part, a repeat replaces it.
 * `GET /api/parts/:id/image`: the image with an `ETag` and `no-cache`, so a revisit is a 304.
 

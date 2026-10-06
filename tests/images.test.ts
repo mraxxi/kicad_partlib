@@ -24,7 +24,7 @@ const app = makeApp({
   lcscFetch: fakeLcsc,
   imageFetch: async (url) => {
     fetched.push(url);
-    if (url.includes('/96x96/') && smallMissing) return new Response('nope', { status: 404 });
+    if (url.includes('/224x224/') && smallMissing) return new Response('nope', { status: 404 });
     if (url.includes('/900x900/')) return new Response(new Uint8Array(64 * 1024).fill(0xff), { headers: { 'content-type': 'image/jpeg' } });
     return new Response(JPEG, { headers: { 'content-type': 'image/jpeg' } });
   },
@@ -44,8 +44,8 @@ describe('image domain', () => {
     expect(isAllowedImageUrl(IMG)).toBe(true);
     for (const bad of ['http://assets.lcsc.com/a.jpg', 'https://assets.lcsc.com.evil.test/a.jpg', 'https://user@assets.lcsc.com/a.jpg', 'https://assets.lcsc.com:8443/a.jpg', 'nonsense']) expect(isAllowedImageUrl(bad)).toBe(false);
   });
-  it('wants LCSC\u2019s 96x96 picture first, then 224x224, and never the 900x900 original', () => {
-    expect(imageCandidates(IMG)).toEqual([IMG.replace('900x900', '96x96'), IMG.replace('900x900', '224x224')]);
+  it('wants LCSC\u2019s 224x224 picture first, then 96x96, and never the 900x900 original', () => {
+    expect(imageCandidates(IMG)).toEqual([IMG.replace('900x900', '224x224'), IMG.replace('900x900', '96x96')]);
     expect(imageCandidates('https://assets.lcsc.com/a.jpg')).toEqual(['https://assets.lcsc.com/a.jpg']);
   });
   it('recognises images by their bytes, not their claimed type', () => {
@@ -68,12 +68,12 @@ describe('part image API', () => {
     expect(await count('part_images')).toBe(0);
   });
 
-  it('stores LCSC\u2019s 96x96 picture as it is, serves it with an ETag, and a repeat replaces it', async () => {
+  it('stores LCSC\u2019s 224x224 picture as it is, serves it with an ETag, and a repeat replaces it', async () => {
     const part = await nth(0);
     expect((await call(`/api/parts/${part.id}/image`)).status).toBe(404);
     const r = (await (await post([part.id])).json()) as { results: Array<{ status: string; bytes: number }> };
     expect(r.results).toEqual([{ partId: part.id, status: 'stored', bytes: JPEG.length }]);
-    expect(fetched).toEqual([IMG.replace('900x900', '96x96')]);
+    expect(fetched).toEqual([IMG.replace('900x900', '224x224')]);
     expect((await post([part.id])).status).toBe(200); // retrying is harmless
     expect(await count('part_images')).toBe(1);
     const got = await call(`/api/parts/${part.id}/image`);
@@ -88,12 +88,23 @@ describe('part image API', () => {
     expect(pending.parts.some((p) => p.partId === part.id)).toBe(false);
   });
 
-  it('falls back to 224x224 when the 96x96 is missing, and refuses to keep the 900x900', async () => {
+  it('falls back to 96x96 when the 224x224 is missing, and refuses to keep the 900x900', async () => {
     const part = await nth(0);
     smallMissing = true;
     await post([part.id]);
-    expect(fetched).toEqual([IMG.replace('900x900', '96x96'), IMG.replace('900x900', '224x224')]);
+    expect(fetched).toEqual([IMG.replace('900x900', '224x224'), IMG.replace('900x900', '96x96')]);
     expect(await count('part_images')).toBe(1);
+  });
+
+  it('offers a part again while it only has the old 96x96 picture', async () => {
+    const part = await nth(0);
+    smallMissing = true;
+    await post([part.id]); // stored from the 96x96 fallback
+    const ids = async () => ((await (await call('/api/images/pending')).json()) as { parts: Array<{ partId: number }> }).parts.map((p) => p.partId);
+    expect(await ids()).toContain(part.id);
+    smallMissing = false;
+    await post([part.id]);
+    expect(await ids()).not.toContain(part.id);
   });
 
   it('says why a part got no image, and stores nothing for it', async () => {
