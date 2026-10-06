@@ -27,8 +27,11 @@ td.num, th.num { text-align:right; font-variant-numeric: tabular-nums; }
 .chip.create_part { color:var(--ok); } .chip.skip_duplicate { color:var(--muted); } .chip.review { color:var(--warn); }
 
 /* ---- app shell ---- */
-nav { box-sizing:border-box; height:var(--nav-h); align-items:center; overflow-x:auto; display:flex; gap:4px; flex-wrap:wrap; padding:10px 16px; border-bottom:1px solid var(--line); position:sticky; top:0; background:var(--bg); z-index:2; }
-nav a { padding:6px 12px; border-radius:6px; color:var(--muted); text-decoration:none; }
+/* One row that scrolls sideways when the tabs do not fit (a phone in portrait). flex-wrap must stay off:
+   with a fixed height, wrapped tabs land on a hidden second row and become unreachable. */
+nav { box-sizing:border-box; height:var(--nav-h); align-items:center; overflow-x:auto; overflow-y:hidden; display:flex; gap:4px; flex-wrap:nowrap; padding:0 16px; scrollbar-width:none; -webkit-overflow-scrolling:touch; overscroll-behavior-x:contain; border-bottom:1px solid var(--line); position:sticky; top:0; background:var(--bg); z-index:2; }
+nav::-webkit-scrollbar { display:none; }
+nav a { flex:none; white-space:nowrap; padding:6px 12px; border-radius:6px; color:var(--muted); text-decoration:none; }
 nav a.on { background:var(--chip); color:var(--fg); font-weight:600; }
 a { color:var(--accent); }
 h2 { font-size:16px; margin:22px 0 8px; }
@@ -92,8 +95,8 @@ table.vt tbody tr.sel td { background: color-mix(in srgb, var(--accent) 16%, var
 .chooser { position:absolute; right:0; top:calc(100% + 4px); z-index:20; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:8px 10px; width:270px; max-height:70vh; overflow:auto; box-shadow:0 8px 24px rgba(0,0,0,.2); }
 .chooser-row { display:flex; justify-content:space-between; align-items:center; padding:2px 0; }
 .chooser-row label { flex-direction:row; align-items:center; gap:6px; color:var(--fg); font-size:14px; }
-.choices { display:flex; gap:12px; flex-wrap:wrap; }
-.choice { flex-direction:row; align-items:flex-start; gap:10px; border:1px solid var(--line); border-radius:8px; padding:10px 14px; max-width:340px; cursor:pointer; color:var(--fg); }
+.choices { display:grid; gap:12px; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); max-width:760px; }
+.choice { flex-direction:row; align-items:flex-start; gap:10px; border:1px solid var(--line); border-radius:8px; padding:10px 14px; cursor:pointer; color:var(--fg); }
 .choice.on { border-color:var(--accent); background: color-mix(in srgb, var(--accent) 8%, var(--bg)); }
 @media (max-width: 900px) { .fill { padding: 8px 8px 8px; } .toolbar h1 { width:100%; } }
 

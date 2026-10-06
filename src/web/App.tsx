@@ -39,9 +39,12 @@ export function App() {
     : path === '/settings' ? <Settings />
     : <Dashboard />;
   const active = part ? '/parts' : proj ? '/projects' : NAV.find(([h]) => h === path)?.[0] ?? '/';
+  // On a narrow screen the tab bar scrolls sideways; keep the current tab in view.
+  const nav = useRef<HTMLElement>(null);
+  useEffect(() => { nav.current?.querySelector('a.on')?.scrollIntoView({ inline: 'center', block: 'nearest' }); }, [active]);
   return (
     <>
-      <nav>{NAV.map(([h, label]) => <a key={h} href={`#${h}`} className={h === active ? 'on' : ''}>{label}</a>)}</nav>
+      <nav ref={nav}>{NAV.map(([h, label]) => <a key={h} href={`#${h}`} className={h === active ? 'on' : ''}>{label}</a>)}</nav>
       {fills ? <div className="fill">{page}</div> : <main className={wideDoc ? 'fluid' : ''}>{page}</main>}
     </>
   );
