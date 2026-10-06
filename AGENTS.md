@@ -226,6 +226,20 @@ at quote time and show their age. The LCSC cart format lives in one function (`l
 columns itself on upload (CSV/XLS/XLSX, <= 4 MB, <= 800 lines, needs Quantity plus a part identifier; verified
 2026-10-06), so the export is `LCSC Part Number,Quantity`.
 
+## 11b. The Parts table (how it is built, so it stays that way)
+
+* **The table owns its scroll.** The Parts route renders a fixed-height `.fill` workspace; the table's `.viewport` is the
+  only scroller. Never let the table grow with its rows and the page scroll instead: that is what put the horizontal
+  scrollbar out of reach.
+* **Rows are virtualised** (`@tanstack/react-virtual`, fixed row height from the density setting). Anything that makes
+  row height variable (wrapping text) breaks the maths; cells truncate with an ellipsis and a tooltip instead.
+* **Columns are data** (the `columns` array in `Parts.tsx`). Saved layout (`partlib.layout.parts.v1`) is keyed by column
+  id; new columns are appended and pinned ones always lead. Filters, search and selection are URL parameters.
+* **Preferences are per browser** (`prefs.ts`, `localStorage`, fail soft) and are display only; they are not data and
+  must never gate behaviour.
+* The size of the table is measured with `clientWidth` on mount, on window resize **and after every render** (the
+  vertical scrollbar appearing narrows the box); do not rely on `ResizeObserver` alone.
+
 ## 12. Status
 
 | Phase | State |

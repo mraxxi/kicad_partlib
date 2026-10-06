@@ -61,6 +61,33 @@ export function guessCategory(description: string): CategoryName {
 /** "10kΩ", "100nF", "3.3Ω", "10uH": the first description token that is a value. */
 export function guessValue(description: string, category: CategoryName): string {
   if (category !== 'Passive - Resistor' && category !== 'Passive - Capacitor' && category !== 'Passive - Inductor') return '';
-  for (const tok of description.split(/\s+/)) if (/^\d[\d.]*[a-zA-Zµ]*[ΩFH]$/.test(tok)) return tok;
+  for (const tok of description.split(/\s+/)) if (/^\d[\d.]*[a-zA-Z\u00B5\u03BC]*[\u03A9\u2126FH]$/.test(tok)) return tok;
   return '';
+}
+
+// micro is written u, U+00B5 (micro sign) or U+03BC (Greek mu) depending on the source.
+const PREFIX: Record<string, number> = { p: 1e-12, n: 1e-9, u: 1e-6, '\u00B5': 1e-6, '\u03BC': 1e-6, m: 1e-3, k: 1e3, K: 1e3, M: 1e6, G: 1e9 };
+// LCSC writes ohms as U+03A9 (Greek capital omega); U+2126 (the ohm sign) looks identical and may appear elsewhere.
+const UNIT_RANK: Record<string, number> = { '\u03A9': 1, '\u2126': 1, F: 2, H: 3 };
+
+/**
+ * "100nF" -> 1e-7 farads, "10kΩ" -> 10000 ohms. The text 100nF, 0.1uF and
+ * 1e-7 neither sort nor compare (AGENTS.md rule 9), so the table sorts on this.
+ * Case matters and is meant: "68mΩ" is milli, "10MΩ" is mega. Anything that is
+ * not a plain resistance / capacitance / inductance returns null and sorts last.
+ */
+export function valueToSi(value: string): { si: number; unit: 'ohm' | 'farad' | 'henry' } | null {
+  const m = /^(\d+(?:\.\d+)?)\s*([pnu\u00B5\u03BCmkKMG]?)\s*([\u03A9\u2126FH])$/.exec(value.trim());
+  if (!m) return null;
+  const si = Number(m[1]) * (m[2] ? PREFIX[m[2]]! : 1);
+  const unit = UNIT_RANK[m[3]!] === 1 ? 'ohm' : m[3] === 'F' ? 'farad' : 'henry';
+  return { si, unit };
+}
+
+/** One number that orders values: by unit (ohm < farad < henry), then by magnitude. Null when unparseable. */
+export function valueSortKey(value: string): number | null {
+  const v = valueToSi(value);
+  if (!v || v.si <= 0) return null;
+  const rank = v.unit === 'ohm' ? 1 : v.unit === 'farad' ? 2 : 3;
+  return rank * 1000 + Math.log10(v.si) + 100;
 }

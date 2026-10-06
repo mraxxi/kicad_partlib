@@ -6,7 +6,7 @@
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.web.json",
     "test": "vitest run",
     "dev": "wrangler dev",
-    "build:web": "vite build",
+    "build:web": "rm -rf public/app && vite build",
     "dev:web": "vite",
     "deploy": "vite build && wrangler deploy"
   },
@@ -14,6 +14,7 @@
     "@hono/zod-validator": "^0.9.1",
     "@tanstack/react-query": "^5.104.1",
     "@tanstack/react-table": "^8.21.3",
+    "@tanstack/react-virtual": "^3.14.13",
     "drizzle-orm": "^0.45.3",
     "hono": "^4.13.13",
     "jose": "^6.2.12",

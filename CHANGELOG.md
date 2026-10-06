@@ -5,6 +5,29 @@ D1 and is not tracked here; this file is about the code and the schema.
 
 ## [Unreleased]
 
+### UI pass — the Parts table and wide screens
+
+Prompted by two complaints: the table's horizontal scrollbar sat at the bottom of 100 rows, and the layout stopped
+at 1100 px so an ultrawide (2560x1080) mostly showed margin.
+
+- **The table scrolls inside its own box** (sticky header, always-visible scrollbars) sized to the window; the page
+  itself no longer scrolls on the Parts view. Rows are **virtualised**: 5,000 parts render ~45 rows and scroll instantly.
+- **Fills the screen**: the Description column absorbs spare width, so there is no blank strip on wide monitors.
+  Part and MPN stay pinned while you scroll sideways.
+- **Columns**: Value, Footprint and LCSC # up front (the owner's priority order); a column chooser (show/hide, reorder),
+  drag-to-resize, double-click to reset a width. Saved per column id, never by position (AGENTS.md §8). The rupee
+  column is now "Worth" so it no longer collides with the component "Value".
+- **Value sorts by magnitude and unit** (10nF < 100nF < 1uF; milli vs mega by case), via `valueToSi`/`valueSortKey` in
+  the domain (tested). Text order gets this wrong; a typed `value_si` column is still the long-term fix (rule 9).
+- **Filters live in the URL** (`#/parts?q=0603&st=ok`): back, refresh and "back to all parts" keep your view and
+  scroll position. Active filters show as removable chips.
+- **Side panel**: on screens >= 1400 px a row opens the part beside the table; arrow keys move the selection, Enter
+  opens the full page, Esc closes, `/` focuses search.
+- **Settings page**: row density (compact/comfortable), side panel on/off, theme (system/light/dark), reset the saved
+  table layout. Stored in this browser only (`localStorage`, fails soft); each machine keeps its own.
+- `npm run build:web` now clears old hashed assets first.
+- 86 tests.
+
 ### Phase 3 — purchasing
 
 - **Migration `0005`**: `projects`, `needs` (one per project+part; frozen `ordered_*` cost), `quotes` (one per

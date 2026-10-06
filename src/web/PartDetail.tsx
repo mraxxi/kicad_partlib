@@ -5,6 +5,7 @@ import { ApiError, api, newId } from './api';
 import { idr, num, unitIdr, when } from './format';
 import { useCategories, useLocations, useRefreshStock, type Location } from './hooks';
 import { Quotes } from './Quotes';
+import { partsHref } from './route';
 
 interface Lot {
   id: number; source: 'order' | 'salvage' | 'manual'; condition: Condition; qtyOnHand: number; unitCostIdrMicro: number;
@@ -141,18 +142,18 @@ function Edit({ d, onSaved }: { d: Detail; onSaved: () => void }) {
   );
 }
 
-export function PartDetail({ id }: { id: number }) {
+export function PartDetail({ id, embedded = false }: { id: number; embedded?: boolean }) {
   const refreshStock = useRefreshStock();
   const locations = useLocations().data ?? [];
   const { data, error, refetch } = useQuery({ queryKey: ['part', id], queryFn: () => api<Detail>(`/parts/${id}`) });
   const refresh = () => { void refreshStock(); void refetch(); };
-  if (error) return <div className="box bad">{(error as Error).message} <a href="#/parts">Back to parts</a></div>;
+  if (error) return <div className="box bad">{(error as Error).message} <a href={partsHref()}>Back to parts</a></div>;
   if (!data) return <p className="lede">Loading…</p>;
   const { part: p, lots, moves } = data;
   return (
     <>
-      <p className="lede"><a href="#/parts">← All parts</a></p>
-      <h1>{p.mpn} <span className="lede">{p.code}</span></h1>
+      {!embedded && <p className="lede"><a href={partsHref()}>← All parts</a></p>}
+      {embedded ? <h2 style={{ marginTop: 0 }}>{p.mpn} <span className="lede">{p.code}</span></h2> : <h1>{p.mpn} <span className="lede">{p.code}</span></h1>}
       <p className="lede">{[p.manufacturer, p.package, p.value, p.category].filter(Boolean).join(' · ')}{p.lcscCode && <> · <a href={`https://www.lcsc.com/product-detail/${p.lcscCode}.html`} target="_blank" rel="noreferrer">{p.lcscCode}</a></>}</p>
       {p.needsReview && <div className="box warn">This part was created with missing details; fill them in below.</div>}
       <div className="box stats">

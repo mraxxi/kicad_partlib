@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseCsv, CsvError } from '../src/domain/csv';
 import { costIdrMicro, parseMicro, MoneyError } from '../src/domain/money';
-import { guessCategory, guessValue, normalizeManufacturer } from '../src/domain/normalize';
+import { guessCategory, guessValue, normalizeManufacturer, valueSortKey, valueToSi } from '../src/domain/normalize';
 import { orderDateFromOrderNo, parseLcscCsv, parseLcscFilename, planLcscImport } from '../src/domain/lcsc';
 
 describe('parseCsv', () => {
@@ -37,6 +37,32 @@ describe('money', () => {
     // 0.0002 USD at 16,500 IDR/USD is 3.3 IDR = 3_300_000 micro-IDR.
     expect(costIdrMicro(200, 16_500_000_000)).toBe(3_300_000);
     expect(costIdrMicro(3_869_100, 16_500_000_000)).toBe(63_840_150_000);
+  });
+});
+
+describe('component values', () => {
+  it('turns the spellings of one value into one number', () => {
+    expect(valueToSi('100nF')!.si).toBeCloseTo(1e-7, 15);
+    expect(valueToSi('0.1uF')!.si).toBeCloseTo(1e-7, 15);
+    expect(valueToSi('0.1\u00B5F')!.si).toBeCloseTo(1e-7, 15);
+    expect(valueToSi('0.1\u03BCF')!.si).toBeCloseTo(1e-7, 15);
+    expect(valueToSi('10kΩ')).toEqual({ si: 10000, unit: 'ohm' });
+    expect(valueToSi('3.3Ω')).toEqual({ si: 3.3, unit: 'ohm' });
+    expect(valueToSi('3.3\u2126')).toEqual({ si: 3.3, unit: 'ohm' }); // the look-alike ohm sign
+  });
+  it('tells milli from mega by case', () => {
+    expect(valueToSi('68mΩ')!.si).toBeCloseTo(0.068, 12);
+    expect(valueToSi('10MΩ')!.si).toBe(1e7);
+  });
+  it('sorts 10nF before 100nF before 1uF, which text order gets wrong', () => {
+    const order = ['1uF', '100nF', '10nF'].sort((a, b) => valueSortKey(a)! - valueSortKey(b)!);
+    expect(order).toEqual(['10nF', '100nF', '1uF']);
+    expect(['100nF', '10nF', '1uF'].sort()).not.toEqual(order);
+  });
+  it('keeps units apart and leaves non-values unsortable', () => {
+    expect(valueSortKey('1MΩ')!).toBeLessThan(valueSortKey('1pF')!);
+    expect(valueSortKey('NE5532')).toBeNull();
+    expect(valueSortKey('')).toBeNull();
   });
 });
 
