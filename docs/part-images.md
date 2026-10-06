@@ -1,6 +1,6 @@
 # Part images
 
-Status: **built, not deployed. Migration `0007` is applied nowhere yet.** Read `AGENTS.md` first.
+Status: **built and deployed to staging and production (2026-10-06); migration `0007` is applied to both databases.** Read `AGENTS.md` first.
 
 ## What the owner asked for
 
