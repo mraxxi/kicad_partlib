@@ -1,6 +1,7 @@
 import { Fragment, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { api, ApiError } from './api';
+import { api, noReason, postImport } from './api';
+import { Refusal } from './Refusal';
 import { useBuyList, useParts, useRefreshBuying } from './hooks';
 
 interface Suggestion { partId: number; mpn: string; lcscCode: string | null; value: string; usableQty: number }
@@ -16,6 +17,7 @@ interface PlanResp {
   summary: { total: number; linked: number; toIdentify: number; dnp: number; added: number; changed: number; removed: number; unchanged: number };
 }
 
+const reasonProblem = (j: { error?: string; errors?: string[] }, status: number) => (j.error || j.errors?.length ? { error: j.error, errors: j.errors } : { error: noReason(status) });
 const RULE: Record<string, string> = { lcsc: 'matched by LCSC number', mpn: 'matched by MPN', remembered: 'linked the same way in another project', manual: 'linked by you' };
 const ACTION: Record<PlanLine['action'], string> = { new: 'new', same: 'unchanged', changed: 'changed', removed: 'no longer in the BOM' };
 
@@ -26,22 +28,28 @@ function Upload({ projectId, boards, onApplied }: { projectId: number; boards: n
   const [plan, setPlan] = useState<PlanResp | null>(null);
   const [seen, setSeen] = useState('');
   const key = JSON.stringify([file?.name, file?.text.length, n]);
+  const [problem, setProblem] = useState<{ error?: string; errors?: string[] } | null>(null);
   const send = useMutation({
-    mutationFn: (apply: boolean) => api<PlanResp>(`/projects/${projectId}/bom`, { body: { filename: file!.name, csv: file!.text, boards: Number(n), apply } }),
-    onSuccess: (r) => { setPlan(r); if (r.mode === 'plan') setSeen(key); else onApplied(); },
+    mutationFn: async (apply: boolean) => {
+      const res = await postImport<PlanResp & { error?: string; errors?: string[] }>(`/projects/${projectId}/bom`, { filename: file!.name, csv: file!.text, boards: Number(n), apply });
+      if ('problem' in res) { setProblem({ error: res.problem }); return; }
+      if (res.status >= 400 || !res.json.mode) { setProblem(reasonProblem(res.json, res.status)); return; }
+      setProblem(null); setPlan(res.json);
+      if (res.json.mode === 'plan') setSeen(key); else onApplied();
+    },
   });
   const canApply = plan?.mode === 'plan' && seen === key && !plan.sameFile && !send.isPending;
   return (
     <section className="box">
       <h2 style={{ marginTop: 0 }}>Import a KiCad BOM</h2>
       <p className="lede">In KiCad: Schematic Editor &rarr; File &rarr; Export &rarr; BOM, with the LCSC and MPN fields you use added. Lines are matched to your parts by LCSC number, then MPN. Nothing is written until you apply.</p>
-      <form className="inline" onSubmit={(e) => { e.preventDefault(); setPlan(null); send.mutate(false); }}>
+      <form className="inline" onSubmit={(e) => { e.preventDefault(); setPlan(null); setProblem(null); send.mutate(false); }}>
         <label>BOM CSV<input type="file" accept=".csv,text/csv,.txt" onChange={async (e) => { const fl = e.target.files?.[0]; setPlan(null); setFile(fl ? { name: fl.name, text: await fl.text() } : null); }} /></label>
         <label>Boards to build<input type="number" min={1} value={n} onChange={(e) => setN(e.target.value)} style={{ width: 90 }} /></label>
         <button type="submit" disabled={!file || send.isPending}>Preview</button>
         <button type="button" disabled={!canApply} onClick={() => send.mutate(true)}>Apply</button>
       </form>
-      {send.error && <div className="box bad">{(send.error as ApiError).message}</div>}
+      {problem && <Refusal error={problem.error} errors={problem.errors} heading="Fix these first:" />}
       {plan?.mode === 'applied' && <div className="box ok">{plan.unchanged ? 'This is the same file for the same number of boards, so nothing changed.' : `Applied: ${plan.summary.total} lines, ${plan.summary.linked} linked to your parts and ${plan.summary.toIdentify} still to identify.`}</div>}
       {plan?.mode === 'plan' && (
         <>

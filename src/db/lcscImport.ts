@@ -9,6 +9,8 @@ export interface OrderMeta {
   fxIdrPerUsdMicro: number;
   shippingIdr: number;
   dutiesIdr: number;
+  /** A typed name, or null to let the app compute the default. Display only: the order number is the key. */
+  alias?: string | null;
 }
 
 export async function findSupplierId(db: D1Database, meter: Meter, name: string): Promise<number | null> {
@@ -165,10 +167,10 @@ export async function applyLcscImport(
     db
       .prepare(
         `INSERT OR IGNORE INTO orders(supplier_id, order_no, order_date, currency, fx_to_idr_micro,
-                                      shipping_idr, duties_idr, status, source_file_sha256)
-         VALUES (?1, ?2, ?3, 'USD', ?4, ?5, ?6, 'received', ?7)`,
+                                      shipping_idr, duties_idr, status, source_file_sha256, alias)
+         VALUES (?1, ?2, ?3, 'USD', ?4, ?5, ?6, 'received', ?7, ?8)`,
       )
-      .bind(meta.supplierId, meta.orderNo, meta.orderDate, meta.fxIdrPerUsdMicro, meta.shippingIdr, meta.dutiesIdr, file.sha256),
+      .bind(meta.supplierId, meta.orderNo, meta.orderDate, meta.fxIdrPerUsdMicro, meta.shippingIdr, meta.dutiesIdr, file.sha256, meta.alias ?? null),
     ...partStatements(db, live, now),
     keyed(
       `INSERT OR IGNORE INTO order_lines(order_id, part_id, qty, unit_price_micro, ext_price_micro, raw_json)

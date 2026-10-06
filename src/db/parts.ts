@@ -1,3 +1,4 @@
+import { orderLabel } from '../domain/labels';
 import { normalizeManufacturer } from '../domain/normalize';
 import type { PartSpecs } from '../domain/specs/types';
 import { partCode, stockStatus, type Condition, type PartSummary, type Source } from '../domain/stock';
@@ -80,7 +81,9 @@ export async function listAllParts(db: D1Database, meter: Meter): Promise<PartSu
 export interface LotRow {
   id: number; source: Source; condition: Condition; qtyOnHand: number; unitCostIdrMicro: number;
   dateCode: string | null; locationId: number | null; locationCode: string | null;
-  donorCode: string | null; orderNo: string | null; createdAt: string;
+  donorCode: string | null; orderNo: string | null;
+  /** The order's readable name (its alias, else "LCSC 25 Aug 2024"); orderNo stays the real number. */
+  orderLabel: string | null; createdAt: string;
 }
 export interface MoveRow {
   id: number; moveId: string; lotId: number; delta: number; reason: string; note: string; at: string;
@@ -96,7 +99,7 @@ export async function getPart(db: D1Database, meter: Meter, id: number): Promise
     db.prepare(
       `SELECT l.id, l.source, l.condition, l.qty_on_hand AS qtyOnHand, l.unit_cost_idr_micro AS unitCostIdrMicro,
               l.date_code AS dateCode, l.location_id AS locationId, lo.code AS locationCode,
-              d.code AS donorCode, o.order_no AS orderNo, l.created_at AS createdAt
+              d.code AS donorCode, o.order_no AS orderNo, o.alias AS orderAlias, o.order_date AS orderDate, l.created_at AS createdAt
          FROM lots l
          LEFT JOIN locations lo ON lo.id = l.location_id
          LEFT JOIN donors d ON d.id = l.donor_id
@@ -113,7 +116,8 @@ export async function getPart(db: D1Database, meter: Meter, id: number): Promise
   meter.add(partRes!); meter.add(lotRes!); meter.add(moveRes!);
   const p = (partRes!.results as unknown as Array<AggRow & { notes: string; datasheet_url: string | null; category_id: number | null }>)[0];
   if (!p) return refuse(404, `There is no part with id ${id}.`);
-  const lots = lotRes!.results as unknown as LotRow[];
+  const lots = (lotRes!.results as unknown as Array<Omit<LotRow, 'orderLabel'> & { orderAlias: string | null; orderDate: string | null }>).map(
+    ({ orderAlias, orderDate, ...l }): LotRow => ({ ...l, orderLabel: orderDate ? orderLabel({ alias: orderAlias, orderDate }) : null }));
   const usable = lots.filter((l) => l.condition !== 'faulty');
   const real = usable.filter((l) => l.source !== 'salvage').reduce((n, l) => n + l.qtyOnHand * l.unitCostIdrMicro, 0);
   const est = usable.filter((l) => l.source === 'salvage').reduce((n, l) => n + l.qtyOnHand * l.unitCostIdrMicro, 0);
