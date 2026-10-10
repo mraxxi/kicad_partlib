@@ -196,7 +196,7 @@ a.dh-counter:focus-visible { box-shadow: inset 0 0 0 2px var(--primary); }
 .dh-counter.is-warn .dh-counter-num { color: var(--warning-ink); }
 
 .dh-stock-bar { display: inline-flex; align-items: center; gap: 8px; }
-.dh-stock-track { width: 64px; height: 6px; background: var(--surface-sunken); border-radius: 99px; overflow: hidden; box-shadow: inset 0 0 0 1px var(--line); }
+.dh-stock-track { width: 64px; height: 6px; background: var(--surface-sunken); border-radius: 4px; overflow: hidden; box-shadow: inset 0 0 0 1px var(--line); }
 .dh-stock-fill { height: 100%; }
 .dh-stock-fill.st-out { background: var(--error-ink); }
 .dh-stock-fill.st-reorder { background: var(--warning-ink); }
@@ -206,28 +206,30 @@ a.dh-counter:focus-visible { box-shadow: inset 0 0 0 2px var(--primary); }
 .dh-legend { display: flex; gap: 16px; font-size: 13px; color: var(--muted); }
 .dh-legend-item { display: flex; align-items: center; gap: 6px; }
 .dh-swatch { display: inline-block; width: 12px; height: 12px; border-radius: 2px; }
-.dh-swatch.paid { background: var(--price); }
-.dh-swatch.est { background: repeating-linear-gradient(45deg, var(--price), var(--price) 3px, transparent 3px, transparent 6px); }
+.dh-swatch.paid { background: var(--price-ink); }
+.dh-swatch.est { background: repeating-linear-gradient(45deg, var(--price-ink), var(--price-ink) 3px, transparent 3px, transparent 6px); }
 
 .dh-chart-row { display: grid; grid-template-columns: 240px 1fr auto; gap: 16px; align-items: center; padding: 8px 12px; border-radius: 6px; cursor: default; text-decoration: none; color: inherit; }
+a.dh-chart-row { cursor: pointer; }
+a.dh-chart-row:hover { text-decoration: none; }
 .dh-chart-row:hover, .dh-chart-row:focus-visible { background: var(--surface-sunken); outline: none; }
 .dh-chart-row:focus-visible { box-shadow: inset 0 0 0 2px var(--primary); }
 .dh-chart-lbl { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dh-chart-bar-area { display: flex; align-items: center; gap: 2px; height: 12px; width: 100%; }
-.dh-bar-paid { height: 100%; background: var(--price); border-radius: 0; }
+.dh-bar-paid { height: 100%; background: var(--price-ink); border-radius: 0; }
 .dh-bar-paid:last-child { border-radius: 0 4px 4px 0; }
-.dh-bar-est { height: 100%; background: repeating-linear-gradient(45deg, var(--price), var(--price) 3px, transparent 3px, transparent 6px); border-radius: 0 4px 4px 0; }
+.dh-bar-est { height: 100%; background: repeating-linear-gradient(45deg, var(--price-ink), var(--price-ink) 3px, transparent 3px, transparent 6px); border-radius: 0 4px 4px 0; }
 .dh-chart-val { font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
 .dh-chart-val-est { color: var(--muted); }
 
 /* Grid: one column on a phone; two from 1100px with the money chart beside value and attention (less scrolling);
    three from 1800px (ultrawide), attention in its own column. Blocks are placed by area, so source order stays the phone order. */
-.dh-grid { display: grid; gap: 0 24px; grid-template-columns: minmax(0, 1fr); grid-template-areas: "hero" "attn" "money" "usage"; align-items: start; }
-.dh-a-hero { grid-area: hero; } .dh-a-attn { grid-area: attn; } .dh-a-money { grid-area: money; } .dh-a-usage { grid-area: usage; }
+.dh-grid { display: grid; gap: 0 24px; grid-template-columns: minmax(0, 1fr); grid-template-areas: "hero" "attn" "money"; align-items: start; }
+.dh-a-hero { grid-area: hero; } .dh-a-attn { grid-area: attn; } .dh-a-money { grid-area: money; }
 .dh-grid > * { min-width: 0; }
 .dh-grid .box { margin-top: 0; }
 @media (min-width: 1100px) {
-  .dh-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "hero money" "attn money" "usage money"; grid-template-rows: auto auto 1fr; }
+  .dh-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "hero money" "attn money"; grid-template-rows: auto 1fr; }
   .dh-a-money { margin-top: 0; }
   .dh-a-money > h2 { margin-top: 0; }
   .dh-counters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
@@ -235,17 +237,34 @@ a.dh-counter:focus-visible { box-shadow: inset 0 0 0 2px var(--primary); }
   .dh-counter-num { font-size: 20px; margin-bottom: 0; }
 }
 @media (min-width: 1800px) {
-  .dh-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1.2fr); grid-template-areas: "hero attn money" "usage attn money"; grid-template-rows: auto 1fr; }
+  .dh-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1.2fr); grid-template-areas: "hero attn money"; grid-template-rows: auto; }
   .dh-a-attn > h2 { margin-top: 0; }
   .dh-counters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 /* The chart sizes to its column, not the window: a container query stacks label over bar when the column is narrow. */
 .dh-a-money { container-type: inline-size; }
 .dh-chart-row { grid-template-columns: minmax(110px, 200px) minmax(0, 1fr) auto; gap: 12px; padding: 5px 8px; }
+.dh-chart-controls button.link { min-height: 32px; }
 @container (max-width: 520px) {
   .dh-chart-row { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "lbl lbl" "bar val"; gap: 4px 12px; padding: 6px 8px; }
   .dh-chart-lbl { grid-area: lbl; }
   .dh-chart-bar-area { grid-area: bar; }
   .dh-chart-val { grid-area: val; }
 }
-@media (max-width: 560px) { .dh-stock-track { width: 40px; } }
+.dh-muted { color: var(--muted); }
+.dh-usage-phone { display: none; margin-left: auto; }
+@media (max-width: 640px) { .dh-usage-phone { display: block; } }
+
+/* ---- database usage badge: collapsed at the right end of the system bar; on a phone (no system bar) on the dashboard heading ---- */
+.usage { position: relative; display: flex; }
+.usage-sysbar { margin-left: auto; }
+.usage-btn, .usage-btn:hover { min-height: 0; height: 24px; padding: 0 8px; font-size: 12px; font-weight: 500; border-radius: 4px; background: transparent; }
+.usage-sysbar .usage-btn { color: var(--on-primary); border: 1px solid rgba(255,255,255,.35); }
+.usage-sysbar .usage-btn:hover { background: rgba(255,255,255,.12); }
+.usage-phone .usage-btn { color: var(--ink); border: 1px solid var(--line-strong); }
+.usage-phone .usage-btn:hover { background: var(--surface-sunken); }
+.usage .usage-btn.hot { background: var(--warning-tint); color: var(--warning-ink); border-color: transparent; }
+.usage-pop { position: absolute; top: calc(100% + 6px); right: 0; z-index: 50; width: 300px; max-width: calc(100vw - 32px); background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow-pop); padding: 12px 14px; font-size: 13px; }
+.usage-pop h3 { font-size: 13px; font-weight: 600; margin: 0 0 4px; }
+.usage-pop p { margin: 8px 0 0; } .usage-pop .usage-note { color: var(--muted); font-size: 12px; line-height: 1.4; }
+@media (max-width: 560px) { .dh-stock-track { width: 40px; } .dh-hide-mpn { display: none; } }

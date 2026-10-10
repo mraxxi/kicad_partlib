@@ -10,6 +10,7 @@ import { Parts } from './Parts';
 import { Projects } from './Projects';
 import { Settings } from './Settings';
 import { Suppliers } from './Suppliers';
+import { UsageBadge } from './UsageBadge';
 import { useRoute } from './route';
 
 const NAV = [
@@ -48,9 +49,9 @@ export function App() {
   useEffect(() => { nav.current?.querySelector('a.on')?.scrollIntoView({ inline: 'center', block: 'nearest' }); }, [active]);
   return (
     <>
-      {/* LCSC's two-tier header: a deep-blue system bar (hidden on a phone) over the tab bar. */}
+      {/* LCSC's two-tier header: a deep-blue system bar (hidden on a phone) over the tab bar; database usage sits at its right end. */}
       <header className="appbar">
-        <div className="sysbar"><b>partlib</b><span>Parts inventory and purchasing</span></div>
+        <div className="sysbar"><b>partlib</b><span>Parts inventory and purchasing</span><UsageBadge variant="sysbar" /></div>
         <nav ref={nav}>{NAV.map(([h, label]) => <a key={h} href={`#${h}`} className={h === active ? 'on' : ''}>{label}</a>)}</nav>
       </header>
       {fills ? <div className="fill">{page}</div> : <main className={fluid ? 'fluid' : ''}>{page}</main>}

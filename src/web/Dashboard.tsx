@@ -1,17 +1,8 @@
 import { useState } from 'react';
 import { STATUS_LABEL, type StockStatus } from '../domain/stock';
 import { idr, num } from './format';
-import { useDashboard, useUsage } from './hooks';
-
-function Meter({ label, used, limit }: { label: string; used: number; limit: number }) {
-  const pct = Math.min(100, (used / limit) * 100);
-  return (
-    <div className="meter">
-      <div className="meter-head"><span>{label}</span><span>{num(used)} / {num(limit)}</span></div>
-      <div className="bar"><div style={{ width: `${Math.max(pct, 0.5)}%` }} className={pct > 80 ? 'hot' : ''} /></div>
-    </div>
-  );
-}
+import { useDashboard } from './hooks';
+import { UsageBadge } from './UsageBadge';
 
 function Counter({ label, val, link, isErr, isWarn }: { label: string; val: number; link?: string; isErr?: boolean; isWarn?: boolean }) {
   const isZero = val === 0;
@@ -25,7 +16,6 @@ function Counter({ label, val, link, isErr, isWarn }: { label: string; val: numb
   if (isZero) cls += ' is-0';
   else if (isErr) cls += ' is-err';
   else if (isWarn) cls += ' is-warn';
-  else if (link) cls += ' is-link';
 
   if (!isZero && link) {
     return <a href={link} className={cls}>{content}</a>;
@@ -35,7 +25,7 @@ function Counter({ label, val, link, isErr, isWarn }: { label: string; val: numb
 
 function StockBar({ usableQty, minQty, status }: { usableQty: number; minQty: number | null; status: StockStatus }) {
   if (minQty === null) {
-    return <span>{num(usableQty)}</span>;
+    return <span>{num(usableQty)} <span className="dh-muted">· no minimum</span></span>;
   }
   const pct = minQty > 0 ? Math.min(usableQty / minQty, 1) * 100 : 0;
   return (
@@ -50,7 +40,6 @@ function StockBar({ usableQty, minQty, status }: { usableQty: number; minQty: nu
 
 export function Dashboard() {
   const { data: d, error } = useDashboard();
-  const { data: u } = useUsage();
   const [showTable, setShowTable] = useState(false);
 
   if (error) return <div className="box bad">{(error as Error).message}</div>;
@@ -60,6 +49,7 @@ export function Dashboard() {
   const totalAnywhere = d.byCategory.some(c => c.valueRealIdr > 0 || c.valueEstimatedIdr > 0);
   
   let chartRows = d.byCategory;
+  let folded: (typeof chartRows)[number] | null = null;
   if (chartRows.length > 8) {
     const top = chartRows.slice(0, 8);
     const rest = chartRows.slice(8);
@@ -70,6 +60,7 @@ export function Dashboard() {
       acc.valueEstimatedIdr += c.valueEstimatedIdr;
       return acc;
     }, { category: `Other (${rest.length} categories)`, parts: 0, units: 0, valueRealIdr: 0, valueEstimatedIdr: 0 });
+    folded = other;
     chartRows = [...top, other];
   }
   const maxVal = Math.max(...chartRows.map(c => c.valueRealIdr + c.valueEstimatedIdr), 0);
@@ -81,6 +72,7 @@ export function Dashboard() {
       <div className="dh-head">
         <h1>Dashboard</h1>
         <span>{num(d.partLines)} parts · {num(d.unitsOnHand)} units on hand</span>
+        <span className="dh-usage-phone"><UsageBadge variant="phone" /></span>
       </div>
 
       <div className="dh-grid">
@@ -101,7 +93,7 @@ export function Dashboard() {
           <Counter label="Out of stock" val={d.outCount} link="#/parts?st=out" isErr />
           <Counter label="Below minimum" val={d.reorderCount} link="#/parts?st=reorder" isWarn />
           <Counter label="Parts to review" val={d.needsReviewCount} link="#/parts?review=1" />
-          <Counter label="Untested salvaged units" val={d.untestedSalvageUnits} />
+          <Counter label="Untested salvaged units" val={d.untestedSalvageUnits} link="#/parts?src=salvage&cond=untested" />
         </div>
 
         {d.reorder.length === 0 ? (
@@ -112,7 +104,7 @@ export function Dashboard() {
               <thead>
                 <tr>
                   <th>Part</th>
-                  <th>MPN</th>
+                  <th className="dh-hide-mpn">MPN</th>
                   <th>Stock</th>
                   <th>Status</th>
                 </tr>
@@ -121,7 +113,7 @@ export function Dashboard() {
                 {d.reorder.map((r) => (
                   <tr key={r.id}>
                     <td><a href={`#/parts/${r.id}`}>{r.code}</a></td>
-                    <td>{r.mpn}</td>
+                    <td className="dh-hide-mpn">{r.mpn}</td>
                     <td><StockBar usableQty={r.usableQty} minQty={r.minQty} status={r.status} /></td>
                     <td><span className={`chip st-${r.status}`}>{STATUS_LABEL[r.status]}</span></td>
                   </tr>
@@ -177,8 +169,12 @@ export function Dashboard() {
             {chartRows.map(c => {
               const pctPaid = maxVal > 0 ? (c.valueRealIdr / maxVal) * 100 : 0;
               const pctEst = maxVal > 0 ? (c.valueEstimatedIdr / maxVal) * 100 : 0;
+              // The folded row and parts with no category have no Parts filter to link to.
+              const isOther = c === folded || c.category === 'Uncategorised';
+              const Tag = isOther ? 'div' : 'a';
+              const props = isOther ? {} : { href: `#/parts?cat=${encodeURIComponent(c.category)}` };
               return (
-                <div key={c.category} className="dh-chart-row" tabIndex={0} 
+                <Tag key={c.category} className="dh-chart-row" {...props} 
                      title={`${c.category}: ${idr(c.valueRealIdr)} paid, ~${idr(c.valueEstimatedIdr)} estimated, ${c.parts} parts, ${num(c.units)} units`}
                      aria-label={`${c.category}: ${idr(c.valueRealIdr)} paid, ~${idr(c.valueEstimatedIdr)} estimated, ${c.parts} parts, ${num(c.units)} units`}>
                   <div className="dh-chart-lbl">{c.category}</div>
@@ -190,23 +186,12 @@ export function Dashboard() {
                     {idr(c.valueRealIdr)}
                     {c.valueEstimatedIdr > 0 && <span className="dh-chart-val-est"> + ~{idr(c.valueEstimatedIdr)}</span>}
                   </div>
-                </div>
+                </Tag>
               );
             })}
           </div>
         )}
       </section>
-
-      {u && (
-        <section className="dh-a-usage">
-          <h2>Today's database usage</h2>
-          <div className="two">
-            <Meter label="Rows read" used={u.rowsRead} limit={u.limits.rowsRead} />
-            <Meter label="Rows written" used={u.rowsWritten} limit={u.limits.rowsWritten} />
-          </div>
-          <p className="lede">Counts only what this app recorded; other Workers on the account share the same free daily quota.</p>
-        </section>
-      )}
       </div>
     </>
   );
