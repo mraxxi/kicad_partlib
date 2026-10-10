@@ -83,7 +83,8 @@ export function Dashboard() {
         <span>{num(d.partLines)} parts · {num(d.unitsOnHand)} units on hand</span>
       </div>
 
-      <div className="box dh-hero">
+      <div className="dh-grid">
+      <div className="box dh-hero dh-a-hero">
         <div>
           <div className="dh-hero-lbl">Stock value (paid for)</div>
           <div className="dh-hero-val">{idr(d.valueRealIdr)}</div>
@@ -94,7 +95,7 @@ export function Dashboard() {
         </div>
       </div>
 
-      <section>
+      <section className="dh-a-attn">
         <h2>Needs attention</h2>
         <div className="dh-counters">
           <Counter label="Out of stock" val={d.outCount} link="#/parts?st=out" isErr />
@@ -131,7 +132,7 @@ export function Dashboard() {
         )}
       </section>
 
-      <section className="dh-chart-wrap">
+      <section className="dh-chart-wrap dh-a-money">
         <h2>Where the money sits</h2>
         <div className="dh-chart-controls">
           <div className="dh-legend">
@@ -197,7 +198,7 @@ export function Dashboard() {
       </section>
 
       {u && (
-        <section>
+        <section className="dh-a-usage">
           <h2>Today's database usage</h2>
           <div className="two">
             <Meter label="Rows read" used={u.rowsRead} limit={u.limits.rowsRead} />
@@ -206,6 +207,7 @@ export function Dashboard() {
           <p className="lede">Counts only what this app recorded; other Workers on the account share the same free daily quota.</p>
         </section>
       )}
+      </div>
     </>
   );
 }

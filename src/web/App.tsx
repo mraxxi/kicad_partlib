@@ -40,6 +40,8 @@ export function App() {
     : path === '/enrich' ? <Enrich />
     : path === '/settings' ? <Settings />
     : <Dashboard />;
+  // The dashboard spreads into three columns on an ultrawide screen, so it is not capped at 1500px either.
+  const fluid = wideDoc || page.type === Dashboard;
   const active = part ? '/parts' : proj ? '/projects' : NAV.find(([h]) => h === path)?.[0] ?? '/';
   // On a narrow screen the tab bar scrolls sideways; keep the current tab in view.
   const nav = useRef<HTMLElement>(null);
@@ -51,7 +53,7 @@ export function App() {
         <div className="sysbar"><b>partlib</b><span>Parts inventory and purchasing</span></div>
         <nav ref={nav}>{NAV.map(([h, label]) => <a key={h} href={`#${h}`} className={h === active ? 'on' : ''}>{label}</a>)}</nav>
       </header>
-      {fills ? <div className="fill">{page}</div> : <main className={wideDoc ? 'fluid' : ''}>{page}</main>}
+      {fills ? <div className="fill">{page}</div> : <main className={fluid ? 'fluid' : ''}>{page}</main>}
     </>
   );
 }

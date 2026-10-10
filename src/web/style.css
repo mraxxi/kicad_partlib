@@ -220,10 +220,32 @@ a.dh-counter:focus-visible { box-shadow: inset 0 0 0 2px var(--primary); }
 .dh-chart-val { font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
 .dh-chart-val-est { color: var(--muted); }
 
-@media (max-width: 560px) {
-  .dh-chart-row { grid-template-columns: 1fr auto; grid-template-areas: "lbl lbl" "bar val"; gap: 6px 12px; padding: 12px 10px; }
+/* Grid: one column on a phone; two from 1100px with the money chart beside value and attention (less scrolling);
+   three from 1800px (ultrawide), attention in its own column. Blocks are placed by area, so source order stays the phone order. */
+.dh-grid { display: grid; gap: 0 24px; grid-template-columns: minmax(0, 1fr); grid-template-areas: "hero" "attn" "money" "usage"; align-items: start; }
+.dh-a-hero { grid-area: hero; } .dh-a-attn { grid-area: attn; } .dh-a-money { grid-area: money; } .dh-a-usage { grid-area: usage; }
+.dh-grid > * { min-width: 0; }
+.dh-grid .box { margin-top: 0; }
+@media (min-width: 1100px) {
+  .dh-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "hero money" "attn money" "usage money"; grid-template-rows: auto auto 1fr; }
+  .dh-a-money { margin-top: 0; }
+  .dh-a-money > h2 { margin-top: 0; }
+  .dh-counters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .dh-counter { padding: 10px 12px; }
+  .dh-counter-num { font-size: 20px; margin-bottom: 0; }
+}
+@media (min-width: 1800px) {
+  .dh-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1.2fr); grid-template-areas: "hero attn money" "usage attn money"; grid-template-rows: auto 1fr; }
+  .dh-a-attn > h2 { margin-top: 0; }
+  .dh-counters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+/* The chart sizes to its column, not the window: a container query stacks label over bar when the column is narrow. */
+.dh-a-money { container-type: inline-size; }
+.dh-chart-row { grid-template-columns: minmax(110px, 200px) minmax(0, 1fr) auto; gap: 12px; padding: 5px 8px; }
+@container (max-width: 520px) {
+  .dh-chart-row { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "lbl lbl" "bar val"; gap: 4px 12px; padding: 6px 8px; }
   .dh-chart-lbl { grid-area: lbl; }
   .dh-chart-bar-area { grid-area: bar; }
-  .dh-chart-val { grid-area: val; text-align: right; }
-  .dh-stock-track { width: 40px; }
+  .dh-chart-val { grid-area: val; }
 }
+@media (max-width: 560px) { .dh-stock-track { width: 40px; } }
